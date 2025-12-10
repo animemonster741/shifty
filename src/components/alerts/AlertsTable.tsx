@@ -16,6 +16,17 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
@@ -23,6 +34,7 @@ import {
   Edit,
   Eye,
   Clock,
+  Trash2,
 } from 'lucide-react';
 import { formatDistanceToNow, differenceInHours, format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -34,9 +46,10 @@ interface AlertsTableProps {
   alerts: IgnoredAlert[];
   onViewAlert: (alert: IgnoredAlert) => void;
   onEditAlert: (alert: IgnoredAlert) => void;
+  onDeleteAlert: (alertId: string) => void;
 }
 
-export function AlertsTable({ alerts, onViewAlert, onEditAlert }: AlertsTableProps) {
+export function AlertsTable({ alerts, onViewAlert, onEditAlert, onDeleteAlert }: AlertsTableProps) {
   const [sortField, setSortField] = useState<SortField>('createdTime');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
@@ -211,15 +224,46 @@ export function AlertsTable({ alerts, onViewAlert, onEditAlert }: AlertsTablePro
                           <Eye className="h-4 w-4" />
                         </Button>
                         {(alert.status === 'active' || alert.status === 'pending') && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => onEditAlert(alert)}
-                            title="Edit alert"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => onEditAlert(alert)}
+                              title="Edit alert"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive"
+                                  title="Delete alert"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Alert</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete this alert? It will be moved to the archive.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => onDeleteAlert(alert.id)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </>
                         )}
                       </div>
                     </TableCell>

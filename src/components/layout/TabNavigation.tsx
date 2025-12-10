@@ -1,8 +1,8 @@
 import { cn } from '@/lib/utils';
-import { AlertTriangle, MessageSquare, BarChart3, Archive } from 'lucide-react';
+import { AlertTriangle, MessageSquare, BarChart3, Archive, History } from 'lucide-react';
 import { TabNotification } from '@/types';
 
-type TabId = 'alerts' | 'messages' | 'statistics' | 'archive';
+type TabId = 'alerts' | 'messages' | 'statistics' | 'archive' | 'logs';
 
 interface Tab {
   id: TabId;
@@ -15,6 +15,7 @@ const tabs: Tab[] = [
   { id: 'messages', label: 'Important Messages', icon: <MessageSquare className="h-4 w-4" /> },
   { id: 'statistics', label: 'Statistics', icon: <BarChart3 className="h-4 w-4" /> },
   { id: 'archive', label: 'Archive', icon: <Archive className="h-4 w-4" /> },
+  { id: 'logs', label: 'Logs', icon: <History className="h-4 w-4" /> },
 ];
 
 interface TabNavigationProps {

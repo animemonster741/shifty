@@ -31,9 +31,19 @@ const defaultFilters: AlertFilters = {
   dateTo: '',
 };
 
-export function ArchiveTab() {
-  const [archivedAlerts] = useState<IgnoredAlert[]>(mockArchivedAlerts);
+interface ArchiveTabProps {
+  alerts: IgnoredAlert[];
+  onAlertsChange: (alerts: IgnoredAlert[]) => void;
+}
+
+export function ArchiveTab({ alerts, onAlertsChange }: ArchiveTabProps) {
   const [filters, setFilters] = useState<AlertFilters>(defaultFilters);
+
+  // Combine passed alerts (deleted ones) with mock archived alerts, filter for archived status
+  const archivedAlerts = useMemo(() => {
+    const deletedFromActive = alerts.filter(a => a.status === 'expired' || a.status === 'deleted');
+    return [...deletedFromActive, ...mockArchivedAlerts];
+  }, [alerts]);
 
   // Apply all filters
   const filteredAlerts = useMemo(() => {
@@ -51,12 +61,12 @@ export function ArchiveTab() {
         if (!matchesSearch) return false;
       }
 
-      // Team filter
+      // Team filter - exact match
       if (filters.team && filters.team !== 'all') {
         if (alert.team !== filters.team) return false;
       }
 
-      // System filter
+      // System filter - exact match
       if (filters.system && filters.system !== 'all') {
         if (alert.system !== filters.system) return false;
       }

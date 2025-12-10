@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { IgnoredAlert, AlertFilters, AlertChangeLog } from '@/types';
-import { mockAlerts } from '@/data/mockData';
 import { AlertsTable } from '@/components/alerts/AlertsTable';
 import { AddAlertModal } from '@/components/alerts/AddAlertModal';
 import { AlertDetailModal } from '@/components/alerts/AlertDetailModal';
@@ -11,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Search, Clock, AlertTriangle } from 'lucide-react';
 import { differenceInHours, isAfter, isBefore, startOfDay, endOfDay, parseISO } from 'date-fns';
+import { toast } from 'sonner';
 
 const defaultFilters: AlertFilters = {
   searchQuery: '',
@@ -21,9 +21,13 @@ const defaultFilters: AlertFilters = {
   dateTo: '',
 };
 
-export function AlertsTab() {
+interface AlertsTabProps {
+  alerts: IgnoredAlert[];
+  onAlertsChange: (alerts: IgnoredAlert[]) => void;
+}
+
+export function AlertsTab({ alerts, onAlertsChange }: AlertsTabProps) {
   const { user } = useAuth();
-  const [alerts, setAlerts] = useState<IgnoredAlert[]>(mockAlerts);
   const [filters, setFilters] = useState<AlertFilters>(defaultFilters);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedAlert, setSelectedAlert] = useState<IgnoredAlert | null>(null);
@@ -53,12 +57,12 @@ export function AlertsTab() {
         if (!matchesSearch) return false;
       }
 
-      // Team filter
+      // Team filter - exact match
       if (filters.team && filters.team !== 'all') {
         if (alert.team !== filters.team) return false;
       }
 
-      // System filter
+      // System filter - exact match
       if (filters.system && filters.system !== 'all') {
         if (alert.system !== filters.system) return false;
       }
@@ -68,7 +72,7 @@ export function AlertsTab() {
         if (alert.status !== filters.status) return false;
       }
 
-      // Date range filter
+      // Date range filter - based on createdTime
       if (filters.dateFrom) {
         const fromDate = startOfDay(parseISO(filters.dateFrom));
         if (isBefore(alert.createdTime, fromDate)) return false;
@@ -90,7 +94,7 @@ export function AlertsTab() {
       commentCount: 0,
       changeLogs: [],
     };
-    setAlerts(prev => [newAlert, ...prev]);
+    onAlertsChange([newAlert, ...alerts]);
   };
 
   const handleViewAlert = (alert: IgnoredAlert) => {
@@ -104,9 +108,31 @@ export function AlertsTab() {
   };
 
   const handleUpdateAlert = (updatedAlert: IgnoredAlert, changeLogs: AlertChangeLog[]) => {
-    setAlerts(prev => prev.map(a => 
-      a.id === updatedAlert.id ? updatedAlert : a
-    ));
+    onAlertsChange(alerts.map(a => a.id === updatedAlert.id ? updatedAlert : a));
+  };
+
+  const handleDeleteAlert = (alertId: string) => {
+    const alertToDelete = alerts.find(a => a.id === alertId);
+    if (!alertToDelete) return;
+
+    // Only active/pending alerts can be deleted (archived via status change)
+    if (alertToDelete.status !== 'active' && alertToDelete.status !== 'pending') {
+      toast.error('Only active alerts can be deleted');
+      return;
+    }
+
+    const updatedAlert: IgnoredAlert = {
+      ...alertToDelete,
+      status: 'deleted',
+      archivedTime: new Date(),
+      archiveReason: 'Deleted',
+      modifiedBy: user?.employeeId,
+      modifiedByName: user?.name,
+      modifiedTime: new Date(),
+    };
+
+    onAlertsChange(alerts.map(a => a.id === alertId ? updatedAlert : a));
+    toast.success('Alert deleted and moved to archive');
   };
 
   const handleSearchChange = (value: string) => {
@@ -193,6 +219,7 @@ export function AlertsTab() {
         alerts={filteredAlerts}
         onViewAlert={handleViewAlert}
         onEditAlert={handleEditAlert}
+        onDeleteAlert={handleDeleteAlert}
       />
 
       {/* Modals */}

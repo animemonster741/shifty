@@ -210,14 +210,17 @@ export function AlertsTable({ alerts, onViewAlert, onEditAlert }: AlertsTablePro
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => onEditAlert(alert)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
+                        {(alert.status === 'active' || alert.status === 'pending') && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => onEditAlert(alert)}
+                            title="Edit alert"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

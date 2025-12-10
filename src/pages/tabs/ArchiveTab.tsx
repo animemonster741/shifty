@@ -1,9 +1,10 @@
-import { useState } from 'react';
-import { IgnoredAlert } from '@/types';
+import { useState, useMemo } from 'react';
+import { IgnoredAlert, AlertFilters } from '@/types';
 import { mockArchivedAlerts } from '@/data/mockData';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { FilterPanel } from '@/components/alerts/FilterPanel';
 import {
   Table,
   TableBody,
@@ -17,23 +18,103 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Search, Download, Filter, Eye } from 'lucide-react';
-import { format, formatDistanceToNow } from 'date-fns';
+import { Search, Download, Eye } from 'lucide-react';
+import { format, formatDistanceToNow, isAfter, isBefore, startOfDay, endOfDay, parseISO } from 'date-fns';
 import { toast } from 'sonner';
+
+const defaultFilters: AlertFilters = {
+  searchQuery: '',
+  team: 'all',
+  system: 'all',
+  status: 'all',
+  dateFrom: '',
+  dateTo: '',
+};
 
 export function ArchiveTab() {
   const [archivedAlerts] = useState<IgnoredAlert[]>(mockArchivedAlerts);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState<AlertFilters>(defaultFilters);
 
-  const filteredAlerts = archivedAlerts.filter(alert =>
-    alert.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    alert.deviceName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    alert.system.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    alert.team.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Apply all filters
+  const filteredAlerts = useMemo(() => {
+    return archivedAlerts.filter(alert => {
+      // Search filter
+      if (filters.searchQuery) {
+        const query = filters.searchQuery.toLowerCase();
+        const matchesSearch = 
+          alert.summary.toLowerCase().includes(query) ||
+          alert.deviceName.toLowerCase().includes(query) ||
+          alert.system.toLowerCase().includes(query) ||
+          alert.team.toLowerCase().includes(query) ||
+          alert.addedByName.toLowerCase().includes(query) ||
+          (alert.archiveReason?.toLowerCase().includes(query) || false);
+        if (!matchesSearch) return false;
+      }
+
+      // Team filter
+      if (filters.team && filters.team !== 'all') {
+        if (alert.team !== filters.team) return false;
+      }
+
+      // System filter
+      if (filters.system && filters.system !== 'all') {
+        if (alert.system !== filters.system) return false;
+      }
+
+      // Status/Archive Reason filter
+      if (filters.status && filters.status !== 'all') {
+        if (alert.status !== filters.status) return false;
+      }
+
+      // Date range filter (using archived time for archive)
+      const dateToCheck = alert.archivedTime || alert.createdTime;
+      
+      if (filters.dateFrom) {
+        const fromDate = startOfDay(parseISO(filters.dateFrom));
+        if (isBefore(dateToCheck, fromDate)) return false;
+      }
+
+      if (filters.dateTo) {
+        const toDate = endOfDay(parseISO(filters.dateTo));
+        if (isAfter(dateToCheck, toDate)) return false;
+      }
+
+      return true;
+    });
+  }, [archivedAlerts, filters]);
 
   const handleExport = () => {
-    toast.success('Archive exported to CSV');
+    // Generate CSV content
+    const headers = ['Added By', 'Created Time', 'Team', 'System', 'Device', 'Summary', 'Archived Time', 'Reason'];
+    const rows = filteredAlerts.map(alert => [
+      alert.addedByName,
+      format(alert.createdTime, 'yyyy-MM-dd HH:mm:ss'),
+      alert.team,
+      alert.system,
+      alert.deviceName,
+      `"${alert.summary.replace(/"/g, '""')}"`,
+      alert.archivedTime ? format(alert.archivedTime, 'yyyy-MM-dd HH:mm:ss') : '',
+      alert.archiveReason || '',
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `NOC_Archive_${format(new Date(), 'yyyyMMdd_HHmmss')}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+
+    toast.success(`Exported ${filteredAlerts.length} records to CSV`);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setFilters(prev => ({ ...prev, searchQuery: value }));
   };
 
   const getReasonBadgeVariant = (reason?: string) => {
@@ -56,17 +137,18 @@ export function ArchiveTab() {
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            value={filters.searchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
             placeholder="Search archive..."
             className="pl-9 input-noc"
           />
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            <Filter className="h-4 w-4 mr-2" />
-            Filters
-          </Button>
+        <div className="flex gap-2 items-center">
+          <FilterPanel 
+            filters={filters} 
+            onFiltersChange={setFilters}
+            showStatusFilter={true}
+          />
           <Button variant="outline" size="sm" onClick={handleExport}>
             <Download className="h-4 w-4 mr-2" />
             Export CSV
@@ -77,6 +159,7 @@ export function ArchiveTab() {
       {/* Archive info */}
       <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/50 border border-border/50">
         <div className="text-sm text-muted-foreground">
+          Showing <span className="font-medium text-foreground">{filteredAlerts.length}</span> of{' '}
           <span className="font-medium text-foreground">{archivedAlerts.length}</span> archived records
           | Data retained for compliance and audit purposes
         </div>
@@ -102,7 +185,7 @@ export function ArchiveTab() {
               {filteredAlerts.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
-                    No archived alerts found
+                    No archived alerts found matching your filters
                   </TableCell>
                 </TableRow>
               ) : (

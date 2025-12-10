@@ -1,5 +1,16 @@
 export type AlertStatus = 'active' | 'pending' | 'expired' | 'deleted';
 
+export interface AlertChangeLog {
+  id: string;
+  alertId: string;
+  changedBy: string;
+  changedByName: string;
+  changedAt: Date;
+  fieldName: string;
+  oldValue: string;
+  newValue: string;
+}
+
 export interface IgnoredAlert {
   id: string;
   addedBy: string;
@@ -15,12 +26,14 @@ export interface IgnoredAlert {
   notes?: string;
   status: AlertStatus;
   modifiedBy?: string;
+  modifiedByName?: string;
   modifiedTime?: Date;
   archivedTime?: Date;
   archiveReason?: string;
   approvedBy?: string;
   approvalTime?: Date;
   commentCount: number;
+  changeLogs?: AlertChangeLog[];
 }
 
 export interface ImportantMessage {
@@ -58,6 +71,15 @@ export interface TabNotification {
   archive: boolean;
 }
 
+export interface AlertFilters {
+  searchQuery: string;
+  team: string;
+  system: string;
+  status: AlertStatus | 'all';
+  dateFrom: string;
+  dateTo: string;
+}
+
 export type Team = 
   | 'Network Operations'
   | 'Security Operations'
@@ -74,6 +96,18 @@ export const TEAMS: Team[] = [
   'Application Support',
   'Database Operations',
 ];
+
+export const SYSTEMS = [
+  'Core Router',
+  'Firewall Cluster',
+  'AWS EC2',
+  'Storage Array',
+  'PostgreSQL',
+  'Load Balancer',
+  'DNS',
+  'IDS/IPS',
+  'Hypervisor',
+] as const;
 
 export const QUICK_DURATIONS = [
   { label: '1 hour', hours: 1 },

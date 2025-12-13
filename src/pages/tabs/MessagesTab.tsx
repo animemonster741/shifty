@@ -101,7 +101,7 @@ export function MessagesTab() {
               <MessageCard
                 key={message.id}
                 message={message}
-                onClick={() => handleViewMessage(message)}
+                onViewDetails={() => handleViewMessage(message)}
               />
             ))}
           </div>
@@ -121,7 +121,7 @@ export function MessagesTab() {
               <MessageCard
                 key={message.id}
                 message={message}
-                onClick={() => handleViewMessage(message)}
+                onViewDetails={() => handleViewMessage(message)}
               />
             ))}
           </div>

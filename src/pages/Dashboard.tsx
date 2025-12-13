@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Header } from '@/components/layout/Header';
 import { TabNavigation, TabId } from '@/components/layout/TabNavigation';
 import { AlertsTab } from '@/pages/tabs/AlertsTab';
@@ -19,6 +19,35 @@ export function Dashboard() {
     logs: false,
   });
   const [alerts, setAlerts] = useState<IgnoredAlert[]>(mockAlerts);
+
+  // Auto-archive expired alerts
+  const archiveExpiredAlerts = useCallback(() => {
+    const now = new Date();
+    setAlerts(currentAlerts => 
+      currentAlerts.map(alert => {
+        if (
+          (alert.status === 'active' || alert.status === 'pending') &&
+          alert.ignoreUntil &&
+          new Date(alert.ignoreUntil) < now
+        ) {
+          return {
+            ...alert,
+            status: 'expired' as const,
+            archivedTime: now,
+            archiveReason: 'Auto-archived: Expired',
+          };
+        }
+        return alert;
+      })
+    );
+  }, []);
+
+  // Run on mount and every minute
+  useEffect(() => {
+    archiveExpiredAlerts();
+    const interval = setInterval(archiveExpiredAlerts, 60000);
+    return () => clearInterval(interval);
+  }, [archiveExpiredAlerts]);
 
   // Collect all logs from all alerts
   const allLogs: AlertChangeLog[] = alerts

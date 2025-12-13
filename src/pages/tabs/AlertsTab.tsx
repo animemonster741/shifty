@@ -175,7 +175,11 @@ export function AlertsTab({ alerts, onAlertsChange }: AlertsTabProps) {
                   Exception ignores awaiting your approval
                 </p>
               </div>
-              <Button variant="warning" size="sm">
+              <Button 
+                variant="warning" 
+                size="sm"
+                onClick={() => setFilters(prev => ({ ...prev, status: 'pending' }))}
+              >
                 Review Now
               </Button>
             </div>

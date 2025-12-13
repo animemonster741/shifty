@@ -1,18 +1,20 @@
+import { useState } from 'react';
 import { ImportantMessage } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Pin, MessageSquare, Clock, User, Paperclip } from 'lucide-react';
-import { formatDistanceToNow, format } from 'date-fns';
+import { Pin, MessageSquare, Clock, User, Paperclip, Eye, ChevronDown, ChevronUp } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 interface MessageCardProps {
   message: ImportantMessage;
-  onClick: () => void;
-  isExpanded?: boolean;
+  onViewDetails: () => void;
 }
 
-export function MessageCard({ message, onClick, isExpanded = false }: MessageCardProps) {
+export function MessageCard({ message, onViewDetails }: MessageCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
   const previewContent = message.content.length > 200 && !isExpanded
     ? message.content.substring(0, 200) + '...'
     : message.content;
@@ -20,10 +22,9 @@ export function MessageCard({ message, onClick, isExpanded = false }: MessageCar
   return (
     <Card
       className={cn(
-        'card-elevated cursor-pointer transition-all duration-200 hover:shadow-lg',
+        'card-elevated transition-all duration-200',
         message.pinned && 'border-primary/30 bg-primary/5'
       )}
-      onClick={onClick}
     >
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-3">
@@ -58,6 +59,15 @@ export function MessageCard({ message, onClick, isExpanded = false }: MessageCar
                 {message.commentCount}
               </Badge>
             )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={onViewDetails}
+              title="View details"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </CardHeader>
@@ -67,9 +77,23 @@ export function MessageCard({ message, onClick, isExpanded = false }: MessageCar
             {previewContent}
           </p>
         </div>
-        {message.content.length > 200 && !isExpanded && (
-          <Button variant="link" className="px-0 h-auto mt-2">
-            Read More
+        {message.content.length > 200 && (
+          <Button 
+            variant="link" 
+            className="px-0 h-auto mt-2 gap-1"
+            onClick={() => setIsExpanded(!isExpanded)}
+          >
+            {isExpanded ? (
+              <>
+                <ChevronUp className="h-4 w-4" />
+                Show Less
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-4 w-4" />
+                Read More
+              </>
+            )}
           </Button>
         )}
       </CardContent>

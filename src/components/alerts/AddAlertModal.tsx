@@ -60,7 +60,7 @@ export function AddAlertModal({ open, onOpenChange, onSubmit }: AddAlertModalPro
 
   const ignoreUntil = getIgnoreUntil();
   const isExceptionIgnore = ignoreUntil && (ignoreUntil.getTime() - new Date().getTime()) > 72 * 60 * 60 * 1000;
-  const isManager = user?.role === 'manager';
+  const isAdmin = user?.role === 'admin';
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,9 +78,9 @@ export function AddAlertModal({ open, onOpenChange, onSubmit }: AddAlertModalPro
     const alertData = {
       ...formData,
       ignoreUntil,
-      status: isExceptionIgnore && !isManager ? 'pending' : 'active',
+      status: isExceptionIgnore && !isAdmin ? 'pending' : 'active',
       addedBy: user?.employeeId,
-      addedByName: user?.name,
+      addedByName: user?.fullName,
       createdTime: new Date(),
     };
 
@@ -88,7 +88,7 @@ export function AddAlertModal({ open, onOpenChange, onSubmit }: AddAlertModalPro
     onOpenChange(false);
     resetForm();
 
-    if (isExceptionIgnore && !isManager) {
+    if (isExceptionIgnore && !isAdmin) {
       toast.warning('Alert submitted for manager approval (>72h duration)');
     } else {
       toast.success('Ignored alert created successfully');
@@ -297,7 +297,7 @@ export function AddAlertModal({ open, onOpenChange, onSubmit }: AddAlertModalPro
               )}
             </div>
 
-            {isExceptionIgnore && !isManager && (
+            {isExceptionIgnore && !isAdmin && (
               <div className="flex items-start gap-3 rounded-lg border border-warning/50 bg-warning/10 p-3">
                 <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
                 <div>
@@ -326,7 +326,7 @@ export function AddAlertModal({ open, onOpenChange, onSubmit }: AddAlertModalPro
                 Cancel
               </Button>
               <Button type="submit">
-                {isExceptionIgnore && !isManager ? 'Submit for Approval' : 'Add Ignore'}
+                {isExceptionIgnore && !isAdmin ? 'Submit for Approval' : 'Add Ignore'}
               </Button>
             </DialogFooter>
           </form>

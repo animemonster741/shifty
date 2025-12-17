@@ -1,66 +1,177 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { User, Session } from '@supabase/supabase-js';
 
-export type UserRole = 'employee' | 'manager';
+export type UserRole = 'admin' | 'user';
 
-export interface User {
+export interface AppUser {
+  id: string;
   employeeId: string;
-  name: string;
+  fullName: string;
   role: UserRole;
 }
 
 interface AuthContextType {
-  user: User | null;
+  user: AppUser | null;
+  session: Session | null;
   isAuthenticated: boolean;
-  login: (employeeId: string) => Promise<boolean>;
-  logout: () => void;
+  isLoading: boolean;
+  isAdmin: boolean;
+  login: (email: string, password: string) => Promise<{ error: string | null }>;
+  signup: (email: string, password: string, employeeId: string, fullName: string) => Promise<{ error: string | null }>;
+  logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock user database - managers have IDs starting with 1
-const mockUsers: Record<string, User> = {
-  '1001': { employeeId: '1001', name: 'Sarah Mitchell', role: 'manager' },
-  '1002': { employeeId: '1002', name: 'David Chen', role: 'manager' },
-  '2001': { employeeId: '2001', name: 'Alex Thompson', role: 'employee' },
-  '2002': { employeeId: '2002', name: 'Jordan Rivera', role: 'employee' },
-  '2003': { employeeId: '2003', name: 'Casey Morgan', role: 'employee' },
-  '2004': { employeeId: '2004', name: 'Taylor Brooks', role: 'employee' },
-};
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => {
-    const stored = sessionStorage.getItem('noc-user');
-    return stored ? JSON.parse(stored) : null;
-  });
+  const [user, setUser] = useState<AppUser | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const login = useCallback(async (employeeId: string): Promise<boolean> => {
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+  const fetchUserProfile = async (userId: string): Promise<AppUser | null> => {
+    try {
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
 
-    // Check if user exists in mock database
-    let userData = mockUsers[employeeId];
+      if (profileError || !profile) {
+        console.error('Error fetching profile:', profileError);
+        return null;
+      }
 
-    // If not found, create a new employee user
-    if (!userData) {
-      userData = {
-        employeeId,
-        name: `Employee ${employeeId}`,
-        role: employeeId.startsWith('1') ? 'manager' : 'employee',
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (roleError) {
+        console.error('Error fetching role:', roleError);
+        return null;
+      }
+
+      return {
+        id: userId,
+        employeeId: profile.employee_id,
+        fullName: profile.full_name,
+        role: (roleData?.role as UserRole) || 'user',
       };
+    } catch (error) {
+      console.error('Error in fetchUserProfile:', error);
+      return null;
     }
+  };
 
-    setUser(userData);
-    sessionStorage.setItem('noc-user', JSON.stringify(userData));
-    return true;
+  useEffect(() => {
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, currentSession) => {
+        setSession(currentSession);
+        
+        if (currentSession?.user) {
+          // Defer Supabase calls with setTimeout to prevent deadlock
+          setTimeout(() => {
+            fetchUserProfile(currentSession.user.id).then(setUser);
+          }, 0);
+        } else {
+          setUser(null);
+        }
+      }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
+      setSession(existingSession);
+      if (existingSession?.user) {
+        fetchUserProfile(existingSession.user.id).then((profile) => {
+          setUser(profile);
+          setIsLoading(false);
+        });
+      } else {
+        setIsLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const logout = useCallback(() => {
+  const login = useCallback(async (email: string, password: string): Promise<{ error: string | null }> => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        return { error: error.message };
+      }
+
+      return { error: null };
+    } catch (err) {
+      return { error: 'Login failed. Please try again.' };
+    }
+  }, []);
+
+  const signup = useCallback(async (
+    email: string, 
+    password: string, 
+    employeeId: string, 
+    fullName: string
+  ): Promise<{ error: string | null }> => {
+    try {
+      const redirectUrl = `${window.location.origin}/`;
+      
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            employee_id: employeeId,
+            full_name: fullName,
+          },
+        },
+      });
+
+      if (error) {
+        return { error: error.message };
+      }
+
+      return { error: null };
+    } catch (err) {
+      return { error: 'Signup failed. Please try again.' };
+    }
+  }, []);
+
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut();
     setUser(null);
-    sessionStorage.removeItem('noc-user');
+    setSession(null);
   }, []);
+
+  const refreshUser = useCallback(async () => {
+    if (session?.user) {
+      const profile = await fetchUserProfile(session.user.id);
+      setUser(profile);
+    }
+  }, [session]);
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      session,
+      isAuthenticated: !!user, 
+      isLoading,
+      isAdmin: user?.role === 'admin',
+      login, 
+      signup,
+      logout,
+      refreshUser,
+    }}>
       {children}
     </AuthContext.Provider>
   );

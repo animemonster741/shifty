@@ -85,7 +85,7 @@ export function EditAlertModal({ alert, open, onOpenChange, onSubmit }: EditAler
 
   const ignoreUntil = getIgnoreUntil();
   const isExceptionIgnore = ignoreUntil && (ignoreUntil.getTime() - new Date().getTime()) > 72 * 60 * 60 * 1000;
-  const isManager = user?.role === 'manager';
+  const isAdmin = user?.role === 'admin';
   const canEdit = alert.status === 'active' || alert.status === 'pending';
 
   const generateChangeLogs = (): AlertChangeLog[] => {
@@ -98,7 +98,7 @@ export function EditAlertModal({ alert, open, onOpenChange, onSubmit }: EditAler
           id: `log-${Date.now()}-${fieldName}`,
           alertId: alert.id,
           changedBy: user?.employeeId || '',
-          changedByName: user?.name || '',
+          changedByName: user?.fullName || '',
           changedAt: now,
           fieldName,
           oldValue,
@@ -145,7 +145,7 @@ export function EditAlertModal({ alert, open, onOpenChange, onSubmit }: EditAler
       ...formData,
       ignoreUntil,
       modifiedBy: user?.employeeId,
-      modifiedByName: user?.name,
+      modifiedByName: user?.fullName,
       modifiedTime: new Date(),
       changeLogs: [...(alert.changeLogs || []), ...changeLogs],
     };
@@ -295,7 +295,7 @@ export function EditAlertModal({ alert, open, onOpenChange, onSubmit }: EditAler
               </p>
             </div>
 
-            {isExceptionIgnore && !isManager && (
+            {isExceptionIgnore && !isAdmin && (
               <div className="flex items-start gap-3 rounded-lg border border-warning/50 bg-warning/10 p-3">
                 <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
                 <div>

@@ -4,46 +4,97 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Radio, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { z } from 'zod';
+
+const loginSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+});
+
+const signupSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  employeeId: z.string().regex(/^\d{4,10}$/, 'Employee ID must be 4-10 digits'),
+  fullName: z.string().min(2, 'Full name is required').max(100),
+});
 
 export function LoginPage() {
-  const { login } = useAuth();
-  const [employeeId, setEmployeeId] = useState('');
+  const { login, signup } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState('login');
+  
+  // Login form state
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+  
+  // Signup form state
+  const [signupEmail, setSignupEmail] = useState('');
+  const [signupPassword, setSignupPassword] = useState('');
+  const [employeeId, setEmployeeId] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [signupError, setSignupError] = useState('');
 
-  const validateEmployeeId = (id: string): boolean => {
-    const numericRegex = /^\d{4,10}$/;
-    return numericRegex.test(id);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setLoginError('');
 
-    if (!validateEmployeeId(employeeId)) {
-      setError('Employee ID must be 4-10 digits');
+    const validation = loginSchema.safeParse({ email: loginEmail, password: loginPassword });
+    if (!validation.success) {
+      setLoginError(validation.error.errors[0].message);
       return;
     }
 
     setIsLoading(true);
     try {
-      const success = await login(employeeId);
-      if (success) {
+      const { error } = await login(loginEmail, loginPassword);
+      if (error) {
+        setLoginError(error);
+      } else {
         toast.success('Welcome to NOC Handover');
       }
     } catch (err) {
-      setError('Login failed. Please try again.');
+      setLoginError('Login failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '');
-    setEmployeeId(value);
-    setError('');
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSignupError('');
+
+    const validation = signupSchema.safeParse({ 
+      email: signupEmail, 
+      password: signupPassword,
+      employeeId,
+      fullName,
+    });
+    if (!validation.success) {
+      setSignupError(validation.error.errors[0].message);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { error } = await signup(signupEmail, signupPassword, employeeId, fullName);
+      if (error) {
+        if (error.includes('already registered')) {
+          setSignupError('This email is already registered. Please login instead.');
+        } else {
+          setSignupError(error);
+        }
+      } else {
+        toast.success('Account created successfully! You are now logged in.');
+      }
+    } catch (err) {
+      setSignupError('Signup failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -62,52 +113,131 @@ export function LoginPage() {
           </div>
           <CardTitle className="text-2xl font-bold">NOC Handover</CardTitle>
           <CardDescription>
-            Enter your Employee ID to access the shift management system
+            Sign in to access the shift management system
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="employeeId">Employee ID</Label>
-              <Input
-                id="employeeId"
-                type="text"
-                inputMode="numeric"
-                placeholder="Enter 4-10 digit ID"
-                value={employeeId}
-                onChange={handleInputChange}
-                maxLength={10}
-                className="input-noc text-center text-lg tracking-widest"
-                autoFocus
-              />
-              {error && (
-                <p className="text-sm text-destructive animate-fade-in">{error}</p>
-              )}
-            </div>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="login">Login</TabsTrigger>
+              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            </TabsList>
 
-            <Button
-              type="submit"
-              className="w-full"
-              variant="glow"
-              disabled={!employeeId || isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Authenticating...
-                </>
-              ) : (
-                'Sign In'
-              )}
-            </Button>
-          </form>
+            <TabsContent value="login">
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="loginEmail">Email</Label>
+                  <Input
+                    id="loginEmail"
+                    type="email"
+                    placeholder="your@email.com"
+                    value={loginEmail}
+                    onChange={(e) => { setLoginEmail(e.target.value); setLoginError(''); }}
+                    className="input-noc"
+                    autoFocus
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="loginPassword">Password</Label>
+                  <Input
+                    id="loginPassword"
+                    type="password"
+                    placeholder="••••••••"
+                    value={loginPassword}
+                    onChange={(e) => { setLoginPassword(e.target.value); setLoginError(''); }}
+                    className="input-noc"
+                  />
+                </div>
+                {loginError && (
+                  <p className="text-sm text-destructive animate-fade-in">{loginError}</p>
+                )}
+                <Button
+                  type="submit"
+                  className="w-full"
+                  variant="glow"
+                  disabled={!loginEmail || !loginPassword || isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Signing in...
+                    </>
+                  ) : (
+                    'Sign In'
+                  )}
+                </Button>
+              </form>
+            </TabsContent>
 
-          <div className="mt-6 text-center text-sm text-muted-foreground">
-            <p>Demo accounts:</p>
-            <p className="font-mono text-xs mt-1">
-              Manager: 1001, 1002 | Employee: 2001, 2002, 2003
-            </p>
-          </div>
+            <TabsContent value="signup">
+              <form onSubmit={handleSignup} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="employeeId">Employee ID</Label>
+                  <Input
+                    id="employeeId"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="4-10 digit ID"
+                    value={employeeId}
+                    onChange={(e) => { setEmployeeId(e.target.value.replace(/\D/g, '')); setSignupError(''); }}
+                    maxLength={10}
+                    className="input-noc"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Full Name</Label>
+                  <Input
+                    id="fullName"
+                    type="text"
+                    placeholder="John Doe"
+                    value={fullName}
+                    onChange={(e) => { setFullName(e.target.value); setSignupError(''); }}
+                    className="input-noc"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signupEmail">Email</Label>
+                  <Input
+                    id="signupEmail"
+                    type="email"
+                    placeholder="your@email.com"
+                    value={signupEmail}
+                    onChange={(e) => { setSignupEmail(e.target.value); setSignupError(''); }}
+                    className="input-noc"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signupPassword">Password</Label>
+                  <Input
+                    id="signupPassword"
+                    type="password"
+                    placeholder="Min 6 characters"
+                    value={signupPassword}
+                    onChange={(e) => { setSignupPassword(e.target.value); setSignupError(''); }}
+                    className="input-noc"
+                  />
+                </div>
+                {signupError && (
+                  <p className="text-sm text-destructive animate-fade-in">{signupError}</p>
+                )}
+                <Button
+                  type="submit"
+                  className="w-full"
+                  variant="glow"
+                  disabled={!signupEmail || !signupPassword || !employeeId || !fullName || isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating account...
+                    </>
+                  ) : (
+                    'Create Account'
+                  )}
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>

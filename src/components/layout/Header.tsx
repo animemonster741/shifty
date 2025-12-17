@@ -9,10 +9,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Moon, Sun, LogOut, User, Shield, Radio } from 'lucide-react';
+import { Moon, Sun, LogOut, User, Shield, Radio, Settings } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export function Header() {
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
   const handleLogout = () => {
@@ -37,6 +38,15 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-3">
+          {isAdmin && (
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/admin" className="gap-2">
+                <Settings className="h-4 w-4" />
+                <span className="hidden sm:inline">Admin</span>
+              </Link>
+            </Button>
+          )}
+          
           <Button
             variant="ghost"
             size="icon"
@@ -54,28 +64,39 @@ export function Header() {
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="gap-2">
                 <User className="h-4 w-4" />
-                <span className="hidden sm:inline">{user?.name}</span>
+                <span className="hidden sm:inline">{user?.fullName}</span>
                 <Badge
-                  variant={user?.role === 'manager' ? 'default' : 'secondary'}
+                  variant={user?.role === 'admin' ? 'default' : 'secondary'}
                   className="ml-1"
                 >
-                  {user?.role === 'manager' ? (
+                  {user?.role === 'admin' ? (
                     <>
                       <Shield className="mr-1 h-3 w-3" />
-                      Manager
+                      Admin
                     </>
                   ) : (
-                    'Employee'
+                    'User'
                   )}
                 </Badge>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <div className="px-2 py-1.5">
-                <p className="text-sm font-medium">{user?.name}</p>
+                <p className="text-sm font-medium">{user?.fullName}</p>
                 <p className="text-xs text-muted-foreground">ID: {user?.employeeId}</p>
               </div>
               <DropdownMenuSeparator />
+              {isAdmin && (
+                <>
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Admin Panel
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
               <DropdownMenuItem onClick={handleLogout} className="text-destructive">
                 <LogOut className="mr-2 h-4 w-4" />
                 Logout

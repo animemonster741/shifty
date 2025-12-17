@@ -40,7 +40,7 @@ export function AddMessageModal({ open, onOpenChange, onSubmit }: AddMessageModa
       content,
       attachment: attachment?.name,
       addedBy: user?.employeeId,
-      addedByName: user?.name,
+      addedByName: user?.fullName,
       createdTime: new Date(),
       pinned: false,
       commentCount: 0,

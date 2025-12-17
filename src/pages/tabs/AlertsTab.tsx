@@ -127,7 +127,7 @@ export function AlertsTab({ alerts, onAlertsChange }: AlertsTabProps) {
       archivedTime: new Date(),
       archiveReason: 'Deleted',
       modifiedBy: user?.employeeId,
-      modifiedByName: user?.name,
+      modifiedByName: user?.fullName,
       modifiedTime: new Date(),
     };
 
@@ -165,7 +165,7 @@ export function AlertsTab({ alerts, onAlertsChange }: AlertsTabProps) {
             </div>
           </div>
         </div>
-        {user?.role === 'manager' && pendingAlerts.length > 0 && (
+        {user?.role === 'admin' && pendingAlerts.length > 0 && (
           <div className="stat-card sm:col-span-2 lg:col-span-2 !border-warning/50">
             <div className="flex items-center justify-between">
               <div>

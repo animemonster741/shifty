@@ -57,7 +57,7 @@ export function AlertDetailModal({ alert, open, onOpenChange }: AlertDetailModal
       parentType: 'alert',
       text: newComment,
       addedBy: user?.employeeId || '',
-      addedByName: user?.name || '',
+      addedByName: user?.fullName || '',
       createdTime: new Date(),
     };
 

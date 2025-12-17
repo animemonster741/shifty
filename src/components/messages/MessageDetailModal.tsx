@@ -39,7 +39,7 @@ export function MessageDetailModal({ message, open, onOpenChange, onPin }: Messa
   if (!message) return null;
 
   const messageComments = comments.filter(c => c.parentId === message.id && c.parentType === 'message');
-  const isManager = user?.role === 'manager';
+  const isAdmin = user?.role === 'admin';
 
   const handleAddComment = () => {
     if (!newComment.trim()) return;
@@ -50,7 +50,7 @@ export function MessageDetailModal({ message, open, onOpenChange, onPin }: Messa
       parentType: 'message',
       text: newComment,
       addedBy: user?.employeeId || '',
-      addedByName: user?.name || '',
+      addedByName: user?.fullName || '',
       createdTime: new Date(),
     };
 
@@ -88,7 +88,7 @@ export function MessageDetailModal({ message, open, onOpenChange, onPin }: Messa
                 </span>
               </div>
             </div>
-            {isManager && (
+            {isAdmin && (
               <Button
                 variant={message.pinned ? 'default' : 'outline'}
                 size="sm"

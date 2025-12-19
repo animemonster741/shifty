@@ -31,7 +31,6 @@ interface Team {
 
 const addUserSchema = z.object({
   email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
   employeeId: z.string().regex(/^\d{4,10}$/, 'Employee ID must be 4-10 digits'),
   fullName: z.string().min(2, 'Full name is required').max(100),
 });
@@ -51,7 +50,6 @@ export function AdminPage() {
   
   // Add user form
   const [newUserEmail, setNewUserEmail] = useState('');
-  const [newUserPassword, setNewUserPassword] = useState('');
   const [newUserEmployeeId, setNewUserEmployeeId] = useState('');
   const [newUserFullName, setNewUserFullName] = useState('');
   const [newUserRole, setNewUserRole] = useState<UserRole>('user');
@@ -140,7 +138,6 @@ export function AdminPage() {
 
     const validation = addUserSchema.safeParse({
       email: newUserEmail,
-      password: newUserPassword,
       employeeId: newUserEmployeeId,
       fullName: newUserFullName,
     });
@@ -161,16 +158,13 @@ export function AdminPage() {
     try {
       const redirectUrl = `${window.location.origin}/`;
       
-      const { data, error } = await supabase.auth.signUp({
-        email: newUserEmail,
-        password: newUserPassword,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            employee_id: newUserEmployeeId,
-            full_name: newUserFullName,
-            role: newUserRole,
-          },
+      // Use admin invite to create user without password
+      const { data, error } = await supabase.auth.admin.inviteUserByEmail(newUserEmail, {
+        redirectTo: redirectUrl,
+        data: {
+          employee_id: newUserEmployeeId,
+          full_name: newUserFullName,
+          role: newUserRole,
         },
       });
 
@@ -188,9 +182,8 @@ export function AdminPage() {
         }
       }
 
-      toast.success('User created successfully');
+      toast.success('User invited successfully! They will receive an email to set up their account.');
       setNewUserEmail('');
-      setNewUserPassword('');
       setNewUserEmployeeId('');
       setNewUserFullName('');
       setNewUserRole('user');
@@ -362,17 +355,6 @@ export function AdminPage() {
                       placeholder="user@email.com"
                       value={newUserEmail}
                       onChange={(e) => { setNewUserEmail(e.target.value); setAddUserError(''); }}
-                      className="input-noc"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="newPassword">Password</Label>
-                    <Input
-                      id="newPassword"
-                      type="password"
-                      placeholder="Min 6 characters"
-                      value={newUserPassword}
-                      onChange={(e) => { setNewUserPassword(e.target.value); setAddUserError(''); }}
                       className="input-noc"
                     />
                   </div>

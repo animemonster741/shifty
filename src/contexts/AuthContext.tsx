@@ -17,8 +17,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   isAdmin: boolean;
-  login: (email: string, password: string) => Promise<{ error: string | null }>;
-  signup: (email: string, password: string, employeeId: string, fullName: string) => Promise<{ error: string | null }>;
+  login: (email: string) => Promise<{ error: string | null }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -99,41 +98,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const login = useCallback(async (email: string, password: string): Promise<{ error: string | null }> => {
+  const login = useCallback(async (email: string): Promise<{ error: string | null }> => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      // Check if user exists in profiles by looking up via email
+      // Since we don't have password, we'll use signInWithOtp for passwordless login
+      const { error } = await supabase.auth.signInWithOtp({
         email,
-        password,
-      });
-
-      if (error) {
-        return { error: error.message };
-      }
-
-      return { error: null };
-    } catch (err) {
-      return { error: 'Login failed. Please try again.' };
-    }
-  }, []);
-
-  const signup = useCallback(async (
-    email: string, 
-    password: string, 
-    employeeId: string, 
-    fullName: string
-  ): Promise<{ error: string | null }> => {
-    try {
-      const redirectUrl = `${window.location.origin}/`;
-      
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
         options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            employee_id: employeeId,
-            full_name: fullName,
-          },
+          emailRedirectTo: `${window.location.origin}/`,
         },
       });
 
@@ -143,7 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       return { error: null };
     } catch (err) {
-      return { error: 'Signup failed. Please try again.' };
+      return { error: 'Login failed. Please try again.' };
     }
   }, []);
 
@@ -160,21 +132,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [session]);
 
-  return (
-    <AuthContext.Provider value={{ 
-      user, 
-      session,
-      isAuthenticated: !!user, 
-      isLoading,
-      isAdmin: user?.role === 'admin',
-      login, 
-      signup,
-      logout,
-      refreshUser,
-    }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const value = {
+    user,
+    session,
+    isAuthenticated: !!session && !!user,
+    isLoading,
+    isAdmin: user?.role === 'admin',
+    login,
+    logout,
+    refreshUser,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

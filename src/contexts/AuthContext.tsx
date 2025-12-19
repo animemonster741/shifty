@@ -17,7 +17,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   isAdmin: boolean;
-  login: (email: string) => Promise<{ error: string | null }>;
+  login: (employeeId: string) => Promise<{ error: string | null }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -98,12 +98,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const login = useCallback(async (email: string): Promise<{ error: string | null }> => {
+  const login = useCallback(async (employeeId: string): Promise<{ error: string | null }> => {
     try {
-      // Check if user exists in profiles by looking up via email
-      // Since we don't have password, we'll use signInWithOtp for passwordless login
+      // Call edge function to look up user email by employee ID
+      const { data, error: fnError } = await supabase.functions.invoke('get-user-email-by-employee-id', {
+        body: { employeeId },
+      });
+
+      if (fnError) {
+        return { error: 'Error looking up employee ID. Please try again.' };
+      }
+
+      if (data?.error) {
+        return { error: data.error === 'Employee ID not found' 
+          ? 'Employee ID not found. Please contact your administrator.' 
+          : data.error };
+      }
+
+      if (!data?.email) {
+        return { error: 'Could not retrieve user email. Please contact your administrator.' };
+      }
+
       const { error } = await supabase.auth.signInWithOtp({
-        email,
+        email: data.email,
         options: {
           emailRedirectTo: `${window.location.origin}/`,
         },

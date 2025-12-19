@@ -9,20 +9,20 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 
 const loginSchema = z.object({
-  email: z.string().trim().email({ message: "Invalid email address" }).max(255),
+  employeeId: z.string().trim().min(1, { message: "Employee ID is required" }).max(50),
 });
 
 export function LoginPage() {
   const { login } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [email, setEmail] = useState('');
+  const [employeeId, setEmployeeId] = useState('');
   const [error, setError] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    const validation = loginSchema.safeParse({ email });
+    const validation = loginSchema.safeParse({ employeeId });
     if (!validation.success) {
       setError(validation.error.errors[0].message);
       return;
@@ -30,11 +30,11 @@ export function LoginPage() {
 
     setIsLoading(true);
     try {
-      const { error } = await login(email);
+      const { error } = await login(employeeId);
       if (error) {
         setError(error);
       } else {
-        toast.success('Welcome to NOC Handover');
+        toast.success('Magic link sent! Check your email.');
       }
     } catch (err) {
       setError('Login failed. Please try again.');
@@ -65,13 +65,13 @@ export function LoginPage() {
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="employeeId">Employee ID</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="your@email.com"
-                value={email}
-                onChange={(e) => { setEmail(e.target.value); setError(''); }}
+                id="employeeId"
+                type="text"
+                placeholder="Enter your Employee ID"
+                value={employeeId}
+                onChange={(e) => { setEmployeeId(e.target.value); setError(''); }}
                 className="input-noc"
                 autoFocus
               />
@@ -83,7 +83,7 @@ export function LoginPage() {
               type="submit"
               className="w-full"
               variant="glow"
-              disabled={!email || isLoading}
+              disabled={!employeeId || isLoading}
             >
               {isLoading ? (
                 <>

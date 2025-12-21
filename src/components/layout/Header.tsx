@@ -1,5 +1,6 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -9,21 +10,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Moon, Sun, LogOut, User, Shield, Radio, Settings } from 'lucide-react';
+import { Moon, Sun, LogOut, User, Shield, Radio, Settings, Cog } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export function Header() {
   const { user, logout, isAdmin } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { t, direction } = useLanguage();
 
   const handleLogout = () => {
-    if (window.confirm('Are you sure you want to logout?')) {
+    if (window.confirm(t('auth.logoutConfirm'))) {
       logout();
     }
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60" dir={direction}>
       <div className="container flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
@@ -31,8 +33,8 @@ export function Header() {
               <Radio className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h1 className="text-lg font-bold tracking-tight">NOC Handover</h1>
-              <p className="text-xs text-muted-foreground">Shift Management System</p>
+              <h1 className="text-lg font-bold tracking-tight">{t('header.title')}</h1>
+              <p className="text-xs text-muted-foreground">{t('header.subtitle')}</p>
             </div>
           </div>
         </div>
@@ -42,7 +44,7 @@ export function Header() {
             <Button variant="ghost" size="sm" asChild>
               <Link to="/admin" className="gap-2">
                 <Settings className="h-4 w-4" />
-                <span className="hidden sm:inline">Admin</span>
+                <span className="hidden sm:inline">{t('header.admin')}</span>
               </Link>
             </Button>
           )}
@@ -67,15 +69,15 @@ export function Header() {
                 <span className="hidden sm:inline">{user?.fullName}</span>
                 <Badge
                   variant={user?.role === 'admin' ? 'default' : 'secondary'}
-                  className="ml-1"
+                  className="ms-1"
                 >
                   {user?.role === 'admin' ? (
                     <>
-                      <Shield className="mr-1 h-3 w-3" />
-                      Admin
+                      <Shield className="me-1 h-3 w-3" />
+                      {t('admin.admin')}
                     </>
                   ) : (
-                    'User'
+                    t('admin.regularUser')
                   )}
                 </Badge>
               </Button>
@@ -86,20 +88,24 @@ export function Header() {
                 <p className="text-xs text-muted-foreground">ID: {user?.employeeId}</p>
               </div>
               <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/settings">
+                  <Cog className="me-2 h-4 w-4" />
+                  {t('common.settings')}
+                </Link>
+              </DropdownMenuItem>
               {isAdmin && (
-                <>
-                  <DropdownMenuItem asChild>
-                    <Link to="/admin">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Admin Panel
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                </>
+                <DropdownMenuItem asChild>
+                  <Link to="/admin">
+                    <Settings className="me-2 h-4 w-4" />
+                    {t('header.adminPanel')}
+                  </Link>
+                </DropdownMenuItem>
               )}
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout} className="text-destructive">
-                <LogOut className="mr-2 h-4 w-4" />
-                Logout
+                <LogOut className="me-2 h-4 w-4" />
+                {t('header.logout')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

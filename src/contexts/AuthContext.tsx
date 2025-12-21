@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { User, Session } from '@supabase/supabase-js';
+import { Session } from '@supabase/supabase-js';
 
 export type UserRole = 'admin' | 'user';
 
@@ -17,7 +17,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   isAdmin: boolean;
-  login: (employeeId: string) => Promise<{ error: string | null }>;
+  login: (employeeId: string, password: string) => Promise<{ error: string | null }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -98,14 +98,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const login = useCallback(async (employeeId: string): Promise<{ error: string | null }> => {
+  const login = useCallback(async (employeeId: string, password: string): Promise<{ error: string | null }> => {
     try {
-      // Call edge function to look up user email by employee ID
-      const { data, error: fnError } = await supabase.functions.invoke('get-user-email-by-employee-id', {
-        body: { employeeId },
+      // Call edge function to get the internal email for this employee ID
+      const { data, error: fnError } = await supabase.functions.invoke('auth-with-employee-id', {
+        body: { employeeId, password, action: 'login' },
       });
 
       if (fnError) {
+        console.error('Edge function error:', fnError);
         return { error: 'Error looking up employee ID. Please try again.' };
       }
 
@@ -116,22 +117,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (!data?.email) {
-        return { error: 'Could not retrieve user email. Please contact your administrator.' };
+        return { error: 'Could not retrieve user account. Please contact your administrator.' };
       }
 
-      const { error } = await supabase.auth.signInWithOtp({
+      // Sign in with the email and password
+      const { error } = await supabase.auth.signInWithPassword({
         email: data.email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-        },
+        password: password,
       });
 
       if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          return { error: 'Invalid Employee ID or password.' };
+        }
         return { error: error.message };
       }
 
       return { error: null };
     } catch (err) {
+      console.error('Login error:', err);
       return { error: 'Login failed. Please try again.' };
     }
   }, []);

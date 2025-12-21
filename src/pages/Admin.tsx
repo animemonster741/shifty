@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth, UserRole } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -11,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { ArrowLeft, Users, Building2, Loader2, Plus, Shield, User as UserIcon, Pencil } from 'lucide-react';
+import { ArrowLeft, Users, Building2, Loader2, Plus, Shield, User as UserIcon, Pencil, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -30,9 +31,9 @@ interface Team {
 }
 
 const addUserSchema = z.object({
-  email: z.string().email('Invalid email address'),
   employeeId: z.string().regex(/^\d{4,10}$/, 'Employee ID must be 4-10 digits'),
   fullName: z.string().min(2, 'Full name is required').max(100),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
 const addTeamSchema = z.object({
@@ -40,7 +41,8 @@ const addTeamSchema = z.object({
 });
 
 export function AdminPage() {
-  const { user, isAdmin, isLoading: authLoading } = useAuth();
+  const { user, isAdmin, isLoading: authLoading, session } = useAuth();
+  const { t, direction } = useLanguage();
   const navigate = useNavigate();
   
   const [users, setUsers] = useState<UserWithRole[]>([]);
@@ -49,9 +51,10 @@ export function AdminPage() {
   const [isLoadingTeams, setIsLoadingTeams] = useState(true);
   
   // Add user form
-  const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserEmployeeId, setNewUserEmployeeId] = useState('');
   const [newUserFullName, setNewUserFullName] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [newUserRole, setNewUserRole] = useState<UserRole>('user');
   const [isAddingUser, setIsAddingUser] = useState(false);
   const [addUserError, setAddUserError] = useState('');
@@ -137,9 +140,9 @@ export function AdminPage() {
     setAddUserError('');
 
     const validation = addUserSchema.safeParse({
-      email: newUserEmail,
       employeeId: newUserEmployeeId,
       fullName: newUserFullName,
+      password: newUserPassword,
     });
 
     if (!validation.success) {
@@ -156,36 +159,26 @@ export function AdminPage() {
 
     setIsAddingUser(true);
     try {
-      const redirectUrl = `${window.location.origin}/`;
-      
-      // Use admin invite to create user without password
-      const { data, error } = await supabase.auth.admin.inviteUserByEmail(newUserEmail, {
-        redirectTo: redirectUrl,
-        data: {
-          employee_id: newUserEmployeeId,
-          full_name: newUserFullName,
+      // Call edge function to create user
+      const { data, error } = await supabase.functions.invoke('admin-create-user', {
+        body: {
+          employeeId: newUserEmployeeId,
+          fullName: newUserFullName,
+          password: newUserPassword,
           role: newUserRole,
         },
       });
 
       if (error) throw error;
 
-      // Update role if admin
-      if (data.user && newUserRole === 'admin') {
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .update({ role: 'admin' })
-          .eq('user_id', data.user.id);
-
-        if (roleError) {
-          console.error('Error setting admin role:', roleError);
-        }
+      if (data?.error) {
+        throw new Error(data.error);
       }
 
-      toast.success('User invited successfully! They will receive an email to set up their account.');
-      setNewUserEmail('');
+      toast.success(t('admin.userCreated'));
       setNewUserEmployeeId('');
       setNewUserFullName('');
+      setNewUserPassword('');
       setNewUserRole('user');
       fetchUsers();
     } catch (error: any) {
@@ -287,15 +280,15 @@ export function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" dir={direction}>
       <div className="container mx-auto p-6 max-w-6xl">
         <div className="flex items-center gap-4 mb-6">
           <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">Admin Panel</h1>
-            <p className="text-muted-foreground">Manage users, roles, and teams</p>
+            <h1 className="text-2xl font-bold">{t('admin.title')}</h1>
+            <p className="text-muted-foreground">{t('admin.subtitle')}</p>
           </div>
         </div>
 
@@ -303,11 +296,11 @@ export function AdminPage() {
           <TabsList>
             <TabsTrigger value="users" className="gap-2">
               <Users className="h-4 w-4" />
-              User Management
+              {t('admin.userManagement')}
             </TabsTrigger>
             <TabsTrigger value="teams" className="gap-2">
               <Building2 className="h-4 w-4" />
-              Team Management
+              {t('admin.teamManagement')}
             </TabsTrigger>
           </TabsList>
 
@@ -317,14 +310,14 @@ export function AdminPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Plus className="h-5 w-5" />
-                  Add New User
+                  {t('admin.addNewUser')}
                 </CardTitle>
-                <CardDescription>Create a new user account with specified role</CardDescription>
+                <CardDescription>{t('admin.createUserDesc')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleAddUser} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   <div className="space-y-2">
-                    <Label htmlFor="newEmployeeId">Employee ID</Label>
+                    <Label htmlFor="newEmployeeId">{t('auth.employeeId')}</Label>
                     <Input
                       id="newEmployeeId"
                       type="text"
@@ -337,7 +330,7 @@ export function AdminPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="newFullName">Full Name</Label>
+                    <Label htmlFor="newFullName">{t('admin.fullName')}</Label>
                     <Input
                       id="newFullName"
                       type="text"
@@ -348,18 +341,29 @@ export function AdminPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="newEmail">Email</Label>
-                    <Input
-                      id="newEmail"
-                      type="email"
-                      placeholder="user@email.com"
-                      value={newUserEmail}
-                      onChange={(e) => { setNewUserEmail(e.target.value); setAddUserError(''); }}
-                      className="input-noc"
-                    />
+                    <Label htmlFor="newPassword">{t('auth.password')}</Label>
+                    <div className="relative">
+                      <Input
+                        id="newPassword"
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="••••••••"
+                        value={newUserPassword}
+                        onChange={(e) => { setNewUserPassword(e.target.value); setAddUserError(''); }}
+                        className="input-noc pe-10"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute end-0 top-0 h-full px-3 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                    </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="newRole">Role</Label>
+                    <Label htmlFor="newRole">{t('admin.role')}</Label>
                     <Select value={newUserRole} onValueChange={(value: UserRole) => setNewUserRole(value)}>
                       <SelectTrigger className="input-noc">
                         <SelectValue />
@@ -368,13 +372,13 @@ export function AdminPage() {
                         <SelectItem value="user">
                           <div className="flex items-center gap-2">
                             <UserIcon className="h-4 w-4" />
-                            Regular User
+                            {t('admin.regularUser')}
                           </div>
                         </SelectItem>
                         <SelectItem value="admin">
                           <div className="flex items-center gap-2">
                             <Shield className="h-4 w-4" />
-                            Admin
+                            {t('admin.admin')}
                           </div>
                         </SelectItem>
                       </SelectContent>
@@ -384,13 +388,13 @@ export function AdminPage() {
                     <Button type="submit" variant="glow" disabled={isAddingUser} className="w-full">
                       {isAddingUser ? (
                         <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Adding...
+                          <Loader2 className="me-2 h-4 w-4 animate-spin" />
+                          {t('admin.adding')}
                         </>
                       ) : (
                         <>
-                          <Plus className="mr-2 h-4 w-4" />
-                          Add User
+                          <Plus className="me-2 h-4 w-4" />
+                          {t('admin.addUser')}
                         </>
                       )}
                     </Button>
@@ -407,9 +411,9 @@ export function AdminPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Users className="h-5 w-5" />
-                  All Users
+                  {t('admin.allUsers')}
                 </CardTitle>
-                <CardDescription>Manage existing user accounts and permissions</CardDescription>
+                <CardDescription>{t('admin.manageUsersDesc')}</CardDescription>
               </CardHeader>
               <CardContent>
                 {isLoadingUsers ? (
@@ -421,10 +425,10 @@ export function AdminPage() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Employee ID</TableHead>
-                          <TableHead>Full Name</TableHead>
-                          <TableHead>Current Role</TableHead>
-                          <TableHead>Actions</TableHead>
+                          <TableHead>{t('auth.employeeId')}</TableHead>
+                          <TableHead>{t('admin.fullName')}</TableHead>
+                          <TableHead>{t('admin.currentRole')}</TableHead>
+                          <TableHead>{t('admin.actions')}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -435,9 +439,9 @@ export function AdminPage() {
                             <TableCell>
                               <Badge variant={u.role === 'admin' ? 'default' : 'secondary'}>
                                 {u.role === 'admin' ? (
-                                  <><Shield className="h-3 w-3 mr-1" />Admin</>
+                                  <><Shield className="h-3 w-3 me-1" />{t('admin.admin')}</>
                                 ) : (
-                                  <><UserIcon className="h-3 w-3 mr-1" />User</>
+                                  <><UserIcon className="h-3 w-3 me-1" />{t('admin.regularUser')}</>
                                 )}
                               </Badge>
                             </TableCell>
@@ -455,13 +459,13 @@ export function AdminPage() {
                                         newRole: u.role === 'admin' ? 'user' : 'admin' 
                                       })}
                                     >
-                                      <Pencil className="h-4 w-4 mr-1" />
-                                      Change Role
+                                      <Pencil className="h-4 w-4 me-1" />
+                                      {t('admin.changeRole')}
                                     </Button>
                                   </AlertDialogTrigger>
                                   <AlertDialogContent>
                                     <AlertDialogHeader>
-                                      <AlertDialogTitle>Confirm Role Change</AlertDialogTitle>
+                                      <AlertDialogTitle>{t('admin.confirmRoleChange')}</AlertDialogTitle>
                                       <AlertDialogDescription>
                                         Are you sure you want to change {u.full_name}'s role from{' '}
                                         <strong>{u.role}</strong> to{' '}
@@ -471,10 +475,10 @@ export function AdminPage() {
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                       <AlertDialogCancel onClick={() => setPendingRoleChange(null)}>
-                                        Cancel
+                                        {t('common.cancel')}
                                       </AlertDialogCancel>
                                       <AlertDialogAction onClick={handleRoleChange}>
-                                        Confirm
+                                        {t('common.confirm')}
                                       </AlertDialogAction>
                                     </AlertDialogFooter>
                                   </AlertDialogContent>
@@ -483,13 +487,6 @@ export function AdminPage() {
                             </TableCell>
                           </TableRow>
                         ))}
-                        {users.length === 0 && (
-                          <TableRow>
-                            <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                              No users found
-                            </TableCell>
-                          </TableRow>
-                        )}
                       </TableBody>
                     </Table>
                   </div>
@@ -504,14 +501,13 @@ export function AdminPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Plus className="h-5 w-5" />
-                  Add New Team
+                  {t('admin.addNewTeam')}
                 </CardTitle>
-                <CardDescription>Create a new team for alert assignments</CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleAddTeam} className="flex gap-4 items-end">
                   <div className="flex-1 space-y-2">
-                    <Label htmlFor="newTeamName">Team Name</Label>
+                    <Label htmlFor="newTeamName">{t('admin.teamName')}</Label>
                     <Input
                       id="newTeamName"
                       type="text"
@@ -521,16 +517,16 @@ export function AdminPage() {
                       className="input-noc"
                     />
                   </div>
-                  <Button type="submit" variant="glow" disabled={isAddingTeam || !newTeamName.trim()}>
+                  <Button type="submit" variant="glow" disabled={isAddingTeam}>
                     {isAddingTeam ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Adding...
+                        <Loader2 className="me-2 h-4 w-4 animate-spin" />
+                        {t('admin.adding')}
                       </>
                     ) : (
                       <>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add Team
+                        <Plus className="me-2 h-4 w-4" />
+                        {t('admin.addTeam')}
                       </>
                     )}
                   </Button>
@@ -546,31 +542,29 @@ export function AdminPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Building2 className="h-5 w-5" />
-                  All Teams
+                  {t('admin.allTeams')}
                 </CardTitle>
-                <CardDescription>Teams available for alert assignments and filtering</CardDescription>
               </CardHeader>
               <CardContent>
                 {isLoadingTeams ? (
                   <div className="flex justify-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin text-primary" />
                   </div>
+                ) : teams.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">{t('admin.noTeams')}</p>
                 ) : (
-                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid gap-2">
                     {teams.map((team) => (
                       <div 
-                        key={team.id}
-                        className="flex items-center gap-3 p-3 rounded-lg border border-border/50 bg-muted/20"
+                        key={team.id} 
+                        className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
                       >
-                        <Building2 className="h-5 w-5 text-primary" />
-                        <span className="font-medium">{team.name}</span>
+                        <div className="flex items-center gap-3">
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium">{team.name}</span>
+                        </div>
                       </div>
                     ))}
-                    {teams.length === 0 && (
-                      <p className="col-span-full text-center text-muted-foreground py-8">
-                        No teams found
-                      </p>
-                    )}
                   </div>
                 )}
               </CardContent>
@@ -581,3 +575,5 @@ export function AdminPage() {
     </div>
   );
 }
+
+export default AdminPage;

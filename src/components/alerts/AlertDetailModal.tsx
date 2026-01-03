@@ -20,6 +20,7 @@ import {
   MessageSquare,
   Send,
   FileText,
+  Edit,
 } from 'lucide-react';
 import { format, formatDistanceToNow, differenceInHours } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -30,9 +31,10 @@ interface AlertDetailModalProps {
   alert: IgnoredAlert | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onEditAlert?: (alert: IgnoredAlert) => void;
 }
 
-export function AlertDetailModal({ alert, open, onOpenChange }: AlertDetailModalProps) {
+export function AlertDetailModal({ alert, open, onOpenChange, onEditAlert }: AlertDetailModalProps) {
   const { user } = useAuth();
   const [newComment, setNewComment] = useState('');
   const [comments, setComments] = useState<Comment[]>(mockComments);
@@ -66,17 +68,34 @@ export function AlertDetailModal({ alert, open, onOpenChange }: AlertDetailModal
     toast.success('Comment added');
   };
 
+  const isEditable = alert.status === 'active' || alert.status === 'pending';
+
+  const handleEdit = () => {
+    if (onEditAlert && isEditable) {
+      onOpenChange(false);
+      onEditAlert(alert);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-start justify-between gap-4">
             <DialogTitle className="text-xl">Alert Details</DialogTitle>
-            <Badge variant={getStatusColor()}>
-              {alert.status === 'pending' ? 'Pending Approval' : 
-               hoursRemaining < 1 ? 'Critical' : 
-               hoursRemaining < 6 ? 'Expiring Soon' : 'Active'}
-            </Badge>
+            <div className="flex items-center gap-2">
+              {isEditable && onEditAlert && (
+                <Button variant="outline" size="sm" onClick={handleEdit}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+              )}
+              <Badge variant={getStatusColor()}>
+                {alert.status === 'pending' ? 'Pending Approval' : 
+                 hoursRemaining < 1 ? 'Critical' : 
+                 hoursRemaining < 6 ? 'Expiring Soon' : 'Active'}
+              </Badge>
+            </div>
           </div>
         </DialogHeader>
 

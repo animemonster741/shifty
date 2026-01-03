@@ -39,7 +39,7 @@ import {
 import { formatDistanceToNow, differenceInHours, format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
-type SortField = 'addedByName' | 'createdTime' | 'team' | 'system' | 'deviceName' | 'summary' | 'ignoreUntil';
+type SortField = 'instructionGivenBy' | 'team' | 'system' | 'deviceName' | 'summary' | 'notes' | 'ignoreUntil';
 type SortDirection = 'asc' | 'desc';
 
 interface AlertsTableProps {
@@ -50,7 +50,7 @@ interface AlertsTableProps {
 }
 
 export function AlertsTable({ alerts, onViewAlert, onEditAlert, onDeleteAlert }: AlertsTableProps) {
-  const [sortField, setSortField] = useState<SortField>('createdTime');
+  const [sortField, setSortField] = useState<SortField>('ignoreUntil');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   const handleSort = (field: SortField) => {
@@ -111,11 +111,8 @@ export function AlertsTable({ alerts, onViewAlert, onEditAlert, onDeleteAlert }:
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="w-[140px]">
-                <SortableHeader field="addedByName">Added By</SortableHeader>
-              </TableHead>
-              <TableHead className="w-[140px]">
-                <SortableHeader field="createdTime">Created</SortableHeader>
+              <TableHead className="w-[160px]">
+                <SortableHeader field="instructionGivenBy">Instruction Given By</SortableHeader>
               </TableHead>
               <TableHead className="w-[140px]">
                 <SortableHeader field="team">Team</SortableHeader>
@@ -128,6 +125,9 @@ export function AlertsTable({ alerts, onViewAlert, onEditAlert, onDeleteAlert }:
               </TableHead>
               <TableHead className="min-w-[200px]">
                 <SortableHeader field="summary">Summary</SortableHeader>
+              </TableHead>
+              <TableHead className="w-[150px]">
+                <SortableHeader field="notes">Notes</SortableHeader>
               </TableHead>
               <TableHead className="w-[160px]">
                 <SortableHeader field="ignoreUntil">Ignore Until</SortableHeader>
@@ -158,18 +158,8 @@ export function AlertsTable({ alerts, onViewAlert, onEditAlert, onDeleteAlert }:
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
                         <div className={cn('status-indicator', `status-${timeStatus === 'normal' ? 'active' : timeStatus}`)} />
-                        <span className="truncate">{alert.addedByName}</span>
+                        <span className="truncate">{alert.instructionGivenBy}</span>
                       </div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      <Tooltip>
-                        <TooltipTrigger className="text-left">
-                          {formatDistanceToNow(alert.createdTime, { addSuffix: true })}
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          {format(alert.createdTime, 'PPpp')}
-                        </TooltipContent>
-                      </Tooltip>
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary" className="font-normal">
@@ -184,6 +174,9 @@ export function AlertsTable({ alerts, onViewAlert, onEditAlert, onDeleteAlert }:
                     </TableCell>
                     <TableCell>
                       <p className="line-clamp-2 text-sm">{alert.summary}</p>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      <p className="line-clamp-2 text-sm">{alert.notes || '-'}</p>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">

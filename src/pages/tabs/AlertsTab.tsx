@@ -222,7 +222,6 @@ export function AlertsTab({ alerts, onAlertsChange }: AlertsTabProps) {
       <AlertsTable
         alerts={filteredAlerts}
         onViewAlert={handleViewAlert}
-        onEditAlert={handleEditAlert}
         onDeleteAlert={handleDeleteAlert}
       />
 
@@ -236,6 +235,7 @@ export function AlertsTab({ alerts, onAlertsChange }: AlertsTabProps) {
         alert={selectedAlert}
         open={isDetailModalOpen}
         onOpenChange={setIsDetailModalOpen}
+        onEditAlert={handleEditAlert}
       />
       <EditAlertModal
         alert={selectedAlert}

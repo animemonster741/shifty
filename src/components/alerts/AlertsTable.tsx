@@ -31,7 +31,6 @@ import {
   ArrowUp,
   ArrowDown,
   MessageSquare,
-  Edit,
   Eye,
   Clock,
   Trash2,
@@ -45,11 +44,10 @@ type SortDirection = 'asc' | 'desc';
 interface AlertsTableProps {
   alerts: IgnoredAlert[];
   onViewAlert: (alert: IgnoredAlert) => void;
-  onEditAlert: (alert: IgnoredAlert) => void;
   onDeleteAlert: (alertId: string) => void;
 }
 
-export function AlertsTable({ alerts, onViewAlert, onEditAlert, onDeleteAlert }: AlertsTableProps) {
+export function AlertsTable({ alerts, onViewAlert, onDeleteAlert }: AlertsTableProps) {
   const [sortField, setSortField] = useState<SortField>('ignoreUntil');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
@@ -217,17 +215,7 @@ export function AlertsTable({ alerts, onViewAlert, onEditAlert, onDeleteAlert }:
                           <Eye className="h-4 w-4" />
                         </Button>
                         {(alert.status === 'active' || alert.status === 'pending') && (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => onEditAlert(alert)}
-                              title="Edit alert"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <AlertDialog>
+                          <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button
                                   variant="ghost"
@@ -256,7 +244,6 @@ export function AlertsTable({ alerts, onViewAlert, onEditAlert, onDeleteAlert }:
                                 </AlertDialogFooter>
                               </AlertDialogContent>
                             </AlertDialog>
-                          </>
                         )}
                       </div>
                     </TableCell>

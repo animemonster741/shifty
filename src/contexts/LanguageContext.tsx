@@ -87,13 +87,35 @@ export const translations: Translations = {
   'tabs.messages': { en: 'Messages', he: 'הודעות' },
   'tabs.statistics': { en: 'Statistics', he: 'סטטיסטיקות' },
   'tabs.archive': { en: 'Archive', he: 'ארכיון' },
-  'tabs.logs': { en: 'Logs', he: 'לוגים' },
+  'tabs.logs': { en: 'Logs', he: 'יומן פעילות' },
 
   // Status
   'status.active': { en: 'Active', he: 'פעיל' },
   'status.pending': { en: 'Pending', he: 'ממתין' },
   'status.expired': { en: 'Expired', he: 'פג תוקף' },
   'status.deleted': { en: 'Deleted', he: 'נמחק' },
+
+  // Alerts Table
+  'alerts.actions': { en: 'Actions', he: 'פעולות' },
+  'alerts.ignoreUntil': { en: 'Ignore Until', he: 'התעלמות עד' },
+  'alerts.notes': { en: 'Notes', he: 'הערות' },
+  'alerts.summary': { en: 'Summary', he: 'תוכן ההתרעה' },
+  'alerts.team': { en: 'Team', he: 'צוות' },
+  'alerts.instructionGivenBy': { en: 'Instruction Given By', he: 'נותן ההנחיה' },
+  'alerts.system': { en: 'System', he: 'מערכת' },
+  'alerts.reviewNow': { en: 'Review Now', he: 'לבדיקה' },
+  'alerts.activeAlerts': { en: 'Active Alerts', he: 'התראות פעילות' },
+  'alerts.addAlert': { en: 'Add Alert', he: 'הוספת התראה' },
+  'alerts.deleteAlert': { en: 'Delete Alert', he: 'מחיקת התראה' },
+  'alerts.deleteConfirm': { en: 'Are you sure you want to delete this alert?', he: 'האם למחוק התראה זו?' },
+  'alerts.viewDetails': { en: 'View Details', he: 'צפייה בפרטים' },
+  'alerts.alertDetails': { en: 'Alert Details', he: 'פרטי התראה' },
+  'alerts.addedBy': { en: 'Added By', he: 'נוסף על ידי' },
+  'alerts.created': { en: 'Created', he: 'נוצר' },
+  'alerts.expiringSoon': { en: 'Expiring Soon', he: 'פג בקרוב' },
+  'alerts.critical': { en: 'Critical', he: 'קריטי' },
+  'alerts.pendingApproval': { en: 'Pending Approval', he: 'ממתין לאישור' },
+  'alerts.noNotes': { en: 'No notes', he: 'אין הערות' },
 };
 
 interface LanguageContextType {

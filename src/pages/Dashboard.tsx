@@ -8,8 +8,10 @@ import { ArchiveTab } from '@/pages/tabs/ArchiveTab';
 import { LogsTab } from '@/pages/tabs/LogsTab';
 import { TabNotification, AlertChangeLog, IgnoredAlert } from '@/types';
 import { mockAlerts } from '@/data/mockData';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export function Dashboard() {
+  const { direction } = useLanguage();
   const [activeTab, setActiveTab] = useState<TabId>('alerts');
   const [notifications, setNotifications] = useState<TabNotification>({
     alerts: false,
@@ -64,7 +66,7 @@ export function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" dir={direction}>
       <Header />
       <TabNavigation
         activeTab={activeTab}

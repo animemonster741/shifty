@@ -36,7 +36,9 @@ import {
   Trash2,
 } from 'lucide-react';
 import { formatDistanceToNow, differenceInHours, format } from 'date-fns';
+import { he, enUS } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 type SortField = 'instructionGivenBy' | 'team' | 'system' | 'deviceName' | 'summary' | 'notes' | 'ignoreUntil';
 type SortDirection = 'asc' | 'desc';
@@ -48,6 +50,9 @@ interface AlertsTableProps {
 }
 
 export function AlertsTable({ alerts, onViewAlert, onDeleteAlert }: AlertsTableProps) {
+  const { t, language } = useLanguage();
+  const dateLocale = language === 'he' ? he : enUS;
+  
   const [sortField, setSortField] = useState<SortField>('ignoreUntil');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
@@ -110,34 +115,34 @@ export function AlertsTable({ alerts, onViewAlert, onDeleteAlert }: AlertsTableP
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="w-[160px]">
-                <SortableHeader field="instructionGivenBy">Instruction Given By</SortableHeader>
+                <SortableHeader field="instructionGivenBy">{t('alerts.instructionGivenBy')}</SortableHeader>
               </TableHead>
               <TableHead className="w-[140px]">
-                <SortableHeader field="team">Team</SortableHeader>
+                <SortableHeader field="team">{t('alerts.team')}</SortableHeader>
               </TableHead>
               <TableHead className="w-[120px]">
-                <SortableHeader field="system">System</SortableHeader>
+                <SortableHeader field="system">{t('alerts.system')}</SortableHeader>
               </TableHead>
               <TableHead className="w-[140px]">
-                <SortableHeader field="deviceName">Device</SortableHeader>
+                <SortableHeader field="deviceName">{t('common.device')}</SortableHeader>
               </TableHead>
               <TableHead className="min-w-[200px]">
-                <SortableHeader field="summary">Summary</SortableHeader>
+                <SortableHeader field="summary">{t('alerts.summary')}</SortableHeader>
               </TableHead>
               <TableHead className="w-[150px]">
-                <SortableHeader field="notes">Notes</SortableHeader>
+                <SortableHeader field="notes">{t('alerts.notes')}</SortableHeader>
               </TableHead>
               <TableHead className="w-[160px]">
-                <SortableHeader field="ignoreUntil">Ignore Until</SortableHeader>
+                <SortableHeader field="ignoreUntil">{t('alerts.ignoreUntil')}</SortableHeader>
               </TableHead>
-              <TableHead className="w-[100px] text-right">Actions</TableHead>
+              <TableHead className="w-[100px] text-end">{t('alerts.actions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sortedAlerts.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
-                  No ignored alerts found
+                  {t('alerts.noAlerts')}
                 </TableCell>
               </TableRow>
             ) : (
@@ -184,16 +189,16 @@ export function AlertsTable({ alerts, onViewAlert, onDeleteAlert }: AlertsTableP
                           timeStatus === 'warning' && 'text-warning'
                         )} />
                         <Tooltip>
-                          <TooltipTrigger className="text-left">
+                          <TooltipTrigger className="text-start">
                             <span className={cn(
                               timeStatus === 'critical' && 'text-destructive font-medium',
                               timeStatus === 'warning' && 'text-warning font-medium'
                             )}>
-                              {formatDistanceToNow(alert.ignoreUntil, { addSuffix: true })}
+                              {formatDistanceToNow(alert.ignoreUntil, { addSuffix: true, locale: dateLocale })}
                             </span>
                           </TooltipTrigger>
                           <TooltipContent>
-                            {format(alert.ignoreUntil, 'PPpp')}
+                            {format(alert.ignoreUntil, 'PPpp', { locale: dateLocale })}
                           </TooltipContent>
                         </Tooltip>
                       </div>
@@ -221,25 +226,25 @@ export function AlertsTable({ alerts, onViewAlert, onDeleteAlert }: AlertsTableP
                                   variant="ghost"
                                   size="icon"
                                   className="h-8 w-8 text-destructive hover:text-destructive"
-                                  title="Delete alert"
+                                  title={t('alerts.deleteAlert')}
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete Alert</AlertDialogTitle>
+                                  <AlertDialogTitle>{t('alerts.deleteAlert')}</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    Are you sure you want to delete this alert? It will be moved to the archive.
+                                    {t('alerts.deleteConfirm')}
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                                   <AlertDialogAction
                                     onClick={() => onDeleteAlert(alert.id)}
                                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                   >
-                                    Delete
+                                    {t('common.delete')}
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>

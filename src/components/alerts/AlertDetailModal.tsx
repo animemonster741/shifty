@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { IgnoredAlert, Comment } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -23,6 +24,7 @@ import {
   Edit,
 } from 'lucide-react';
 import { format, formatDistanceToNow, differenceInHours } from 'date-fns';
+import { he, enUS } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { mockComments } from '@/data/mockData';
 import { toast } from 'sonner';
@@ -36,6 +38,8 @@ interface AlertDetailModalProps {
 
 export function AlertDetailModal({ alert, open, onOpenChange, onEditAlert }: AlertDetailModalProps) {
   const { user } = useAuth();
+  const { t, language, direction } = useLanguage();
+  const dateLocale = language === 'he' ? he : enUS;
   const [newComment, setNewComment] = useState('');
   const [comments, setComments] = useState<Comment[]>(mockComments);
 
@@ -79,21 +83,21 @@ export function AlertDetailModal({ alert, open, onOpenChange, onEditAlert }: Ale
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" dir={direction}>
         <DialogHeader>
           <div className="flex items-start justify-between gap-4">
-            <DialogTitle className="text-xl">Alert Details</DialogTitle>
+            <DialogTitle className="text-xl">{t('alerts.alertDetails')}</DialogTitle>
             <div className="flex items-center gap-2">
               {isEditable && onEditAlert && (
                 <Button variant="outline" size="sm" onClick={handleEdit}>
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
+                  <Edit className="h-4 w-4 me-2" />
+                  {t('common.edit')}
                 </Button>
               )}
               <Badge variant={getStatusColor()}>
-                {alert.status === 'pending' ? 'Pending Approval' : 
-                 hoursRemaining < 1 ? 'Critical' : 
-                 hoursRemaining < 6 ? 'Expiring Soon' : 'Active'}
+                {alert.status === 'pending' ? t('alerts.pendingApproval') : 
+                 hoursRemaining < 1 ? t('alerts.critical') : 
+                 hoursRemaining < 6 ? t('alerts.expiringSoon') : t('status.active')}
               </Badge>
             </div>
           </div>
@@ -105,11 +109,11 @@ export function AlertDetailModal({ alert, open, onOpenChange, onEditAlert }: Ale
             <div className="stat-card">
               <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
                 <Clock className="h-4 w-4" />
-                Created
+                {t('alerts.created')}
               </div>
-              <p className="font-medium">{format(alert.createdTime, 'PPpp')}</p>
+              <p className="font-medium">{format(alert.createdTime, 'PPpp', { locale: dateLocale })}</p>
               <p className="text-xs text-muted-foreground">
-                {formatDistanceToNow(alert.createdTime, { addSuffix: true })}
+                {formatDistanceToNow(alert.createdTime, { addSuffix: true, locale: dateLocale })}
               </p>
             </div>
             <div className={cn(
@@ -119,17 +123,17 @@ export function AlertDetailModal({ alert, open, onOpenChange, onEditAlert }: Ale
             )}>
               <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
                 <Clock className="h-4 w-4" />
-                Ignore Until
+                {t('alerts.ignoreUntil')}
               </div>
               <p className={cn(
                 "font-medium",
                 hoursRemaining < 1 && "text-destructive",
                 hoursRemaining < 6 && hoursRemaining >= 1 && "text-warning"
               )}>
-                {format(alert.ignoreUntil, 'PPpp')}
+                {format(alert.ignoreUntil, 'PPpp', { locale: dateLocale })}
               </p>
               <p className="text-xs text-muted-foreground">
-                {formatDistanceToNow(alert.ignoreUntil, { addSuffix: true })}
+                {formatDistanceToNow(alert.ignoreUntil, { addSuffix: true, locale: dateLocale })}
               </p>
             </div>
           </div>
@@ -139,7 +143,7 @@ export function AlertDetailModal({ alert, open, onOpenChange, onEditAlert }: Ale
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-muted-foreground text-sm">
                 <User className="h-4 w-4" />
-                Added By
+                {t('alerts.addedBy')}
               </div>
               <p className="font-medium">{alert.addedByName}</p>
               <p className="text-xs text-muted-foreground">ID: {alert.addedBy}</p>
@@ -147,28 +151,28 @@ export function AlertDetailModal({ alert, open, onOpenChange, onEditAlert }: Ale
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-muted-foreground text-sm">
                 <FileText className="h-4 w-4" />
-                Instruction Given By
+                {t('alerts.instructionGivenBy')}
               </div>
               <p className="font-medium">{alert.instructionGivenBy}</p>
             </div>
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-muted-foreground text-sm">
                 <Users className="h-4 w-4" />
-                Team
+                {t('alerts.team')}
               </div>
               <Badge variant="secondary">{alert.team}</Badge>
             </div>
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-muted-foreground text-sm">
                 <Server className="h-4 w-4" />
-                System
+                {t('alerts.system')}
               </div>
               <p className="font-mono text-sm">{alert.system}</p>
             </div>
             <div className="space-y-1 sm:col-span-2">
               <div className="flex items-center gap-2 text-muted-foreground text-sm">
                 <Monitor className="h-4 w-4" />
-                Device Name
+                {t('common.device')}
               </div>
               <p className="font-mono text-sm">{alert.deviceName}</p>
             </div>
@@ -178,7 +182,7 @@ export function AlertDetailModal({ alert, open, onOpenChange, onEditAlert }: Ale
 
           {/* Summary */}
           <div className="space-y-2">
-            <h4 className="font-semibold">Summary</h4>
+            <h4 className="font-semibold">{t('alerts.summary')}</h4>
             <p className="text-sm leading-relaxed">{alert.summary}</p>
           </div>
 
@@ -193,7 +197,7 @@ export function AlertDetailModal({ alert, open, onOpenChange, onEditAlert }: Ale
 
           {alert.notes && (
             <div className="space-y-2">
-              <h4 className="font-semibold">Notes</h4>
+              <h4 className="font-semibold">{t('alerts.notes')}</h4>
               <p className="text-sm text-muted-foreground">{alert.notes}</p>
             </div>
           )}
@@ -214,7 +218,7 @@ export function AlertDetailModal({ alert, open, onOpenChange, onEditAlert }: Ale
                     <div className="flex items-center justify-between mb-1">
                       <span className="font-medium text-sm">{comment.addedByName}</span>
                       <span className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(comment.createdTime, { addSuffix: true })}
+                        {formatDistanceToNow(comment.createdTime, { addSuffix: true, locale: dateLocale })}
                       </span>
                     </div>
                     <p className="text-sm">{comment.text}</p>

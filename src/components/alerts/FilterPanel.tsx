@@ -1,4 +1,5 @@
 import { AlertFilters, TEAMS, SYSTEMS, AlertStatus } from '@/types';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -37,6 +38,8 @@ const defaultFilters: AlertFilters = {
 };
 
 export function FilterPanel({ filters, onFiltersChange, showStatusFilter = false }: FilterPanelProps) {
+  const { t, direction } = useLanguage();
+  
   const activeFiltersCount = Object.entries(filters).filter(([key, value]) => {
     if (key === 'searchQuery') return false;
     return value && value !== 'all' && value !== '';
@@ -63,34 +66,34 @@ export function FilterPanel({ filters, onFiltersChange, showStatusFilter = false
           <SheetTrigger asChild>
             <Button variant="outline" size="sm" className="gap-2">
               <Filter className="h-4 w-4" />
-              Filters
+              {t('common.filter')}
               {activeFiltersCount > 0 && (
-                <Badge variant="secondary" className="ml-1 h-5 w-5 rounded-full p-0 text-xs">
+                <Badge variant="secondary" className="ms-1 h-5 w-5 rounded-full p-0 text-xs">
                   {activeFiltersCount}
                 </Badge>
               )}
             </Button>
           </SheetTrigger>
-          <SheetContent>
+          <SheetContent side={direction === 'rtl' ? 'left' : 'right'}>
             <SheetHeader>
-              <SheetTitle>Filter Alerts</SheetTitle>
+              <SheetTitle>{t('common.filter')}</SheetTitle>
               <SheetDescription>
-                Apply filters to narrow down the displayed alerts
+                {t('common.filter')}
               </SheetDescription>
             </SheetHeader>
 
             <div className="mt-6 space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="team-filter">Team</Label>
+                <Label htmlFor="team-filter">{t('alerts.team')}</Label>
                 <Select
                   value={filters.team}
                   onValueChange={(value) => onFiltersChange({ ...filters, team: value })}
                 >
                   <SelectTrigger id="team-filter" className="input-noc">
-                    <SelectValue placeholder="All Teams" />
+                    <SelectValue placeholder={t('filter.allTeams')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Teams</SelectItem>
+                    <SelectItem value="all">{t('filter.allTeams')}</SelectItem>
                     {TEAMS.map((team) => (
                       <SelectItem key={team} value={team}>
                         {team}
@@ -101,16 +104,16 @@ export function FilterPanel({ filters, onFiltersChange, showStatusFilter = false
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="system-filter">System</Label>
+                <Label htmlFor="system-filter">{t('alerts.system')}</Label>
                 <Select
                   value={filters.system}
                   onValueChange={(value) => onFiltersChange({ ...filters, system: value })}
                 >
                   <SelectTrigger id="system-filter" className="input-noc">
-                    <SelectValue placeholder="All Systems" />
+                    <SelectValue placeholder={t('filter.allSystems')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Systems</SelectItem>
+                    <SelectItem value="all">{t('filter.allSystems')}</SelectItem>
                     {SYSTEMS.map((system) => (
                       <SelectItem key={system} value={system}>
                         {system}
@@ -122,27 +125,27 @@ export function FilterPanel({ filters, onFiltersChange, showStatusFilter = false
 
               {showStatusFilter && (
                 <div className="space-y-2">
-                  <Label htmlFor="status-filter">Status</Label>
+                  <Label htmlFor="status-filter">{t('common.status')}</Label>
                   <Select
                     value={filters.status}
                     onValueChange={(value) => onFiltersChange({ ...filters, status: value as AlertStatus | 'all' })}
                   >
                     <SelectTrigger id="status-filter" className="input-noc">
-                      <SelectValue placeholder="All Statuses" />
+                      <SelectValue placeholder={t('filter.allStatuses')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Statuses</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="expired">Expired</SelectItem>
-                      <SelectItem value="deleted">Deleted</SelectItem>
+                      <SelectItem value="all">{t('filter.allStatuses')}</SelectItem>
+                      <SelectItem value="active">{t('status.active')}</SelectItem>
+                      <SelectItem value="pending">{t('status.pending')}</SelectItem>
+                      <SelectItem value="expired">{t('status.expired')}</SelectItem>
+                      <SelectItem value="deleted">{t('status.deleted')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="date-from">Date From</Label>
+                <Label htmlFor="date-from">{t('common.from')}</Label>
                 <Input
                   id="date-from"
                   type="date"
@@ -153,7 +156,7 @@ export function FilterPanel({ filters, onFiltersChange, showStatusFilter = false
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="date-to">Date To</Label>
+                <Label htmlFor="date-to">{t('common.to')}</Label>
                 <Input
                   id="date-to"
                   type="date"
@@ -166,7 +169,7 @@ export function FilterPanel({ filters, onFiltersChange, showStatusFilter = false
 
             <SheetFooter className="mt-6">
               <Button variant="outline" onClick={handleReset}>
-                Reset Filters
+                {t('common.reset')}
               </Button>
             </SheetFooter>
           </SheetContent>
@@ -178,46 +181,46 @@ export function FilterPanel({ filters, onFiltersChange, showStatusFilter = false
         <div className="flex flex-wrap gap-2">
           {filters.team && filters.team !== 'all' && (
             <Badge variant="secondary" className="gap-1">
-              Team: {filters.team}
-              <button onClick={() => removeFilter('team')} className="ml-1 hover:text-destructive">
+              {t('alerts.team')}: {filters.team}
+              <button onClick={() => removeFilter('team')} className="ms-1 hover:text-destructive">
                 <X className="h-3 w-3" />
               </button>
             </Badge>
           )}
           {filters.system && filters.system !== 'all' && (
             <Badge variant="secondary" className="gap-1">
-              System: {filters.system}
-              <button onClick={() => removeFilter('system')} className="ml-1 hover:text-destructive">
+              {t('alerts.system')}: {filters.system}
+              <button onClick={() => removeFilter('system')} className="ms-1 hover:text-destructive">
                 <X className="h-3 w-3" />
               </button>
             </Badge>
           )}
           {showStatusFilter && filters.status && filters.status !== 'all' && (
             <Badge variant="secondary" className="gap-1">
-              Status: {filters.status}
-              <button onClick={() => removeFilter('status')} className="ml-1 hover:text-destructive">
+              {t('common.status')}: {filters.status}
+              <button onClick={() => removeFilter('status')} className="ms-1 hover:text-destructive">
                 <X className="h-3 w-3" />
               </button>
             </Badge>
           )}
           {filters.dateFrom && (
             <Badge variant="secondary" className="gap-1">
-              From: {filters.dateFrom}
-              <button onClick={() => removeFilter('dateFrom')} className="ml-1 hover:text-destructive">
+              {t('common.from')}: {filters.dateFrom}
+              <button onClick={() => removeFilter('dateFrom')} className="ms-1 hover:text-destructive">
                 <X className="h-3 w-3" />
               </button>
             </Badge>
           )}
           {filters.dateTo && (
             <Badge variant="secondary" className="gap-1">
-              To: {filters.dateTo}
-              <button onClick={() => removeFilter('dateTo')} className="ml-1 hover:text-destructive">
+              {t('common.to')}: {filters.dateTo}
+              <button onClick={() => removeFilter('dateTo')} className="ms-1 hover:text-destructive">
                 <X className="h-3 w-3" />
               </button>
             </Badge>
           )}
           <Button variant="ghost" size="sm" onClick={handleReset} className="h-6 text-xs">
-            Clear All
+            {t('filter.clearFilters')}
           </Button>
         </div>
       )}

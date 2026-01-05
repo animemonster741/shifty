@@ -2,8 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
-
 @layer base {
   :root {
     --background: 220 20% 97%;
@@ -123,6 +121,15 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  /* RTL support - Hebrew uses Heebo font */
+  html[dir="rtl"] body {
+    font-family: 'Heebo', sans-serif;
+  }
+
+  html[dir="rtl"] .font-mono {
+    font-family: 'IBM Plex Mono', monospace;
   }
 
   h1, h2, h3, h4, h5, h6 {

@@ -1,21 +1,22 @@
 import { cn } from '@/lib/utils';
 import { AlertTriangle, MessageSquare, BarChart3, Archive, History } from 'lucide-react';
 import { TabNotification } from '@/types';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 type TabId = 'alerts' | 'messages' | 'statistics' | 'archive' | 'logs';
 
 interface Tab {
   id: TabId;
-  label: string;
+  labelKey: string;
   icon: React.ReactNode;
 }
 
 const tabs: Tab[] = [
-  { id: 'alerts', label: 'Ignored Alerts', icon: <AlertTriangle className="h-4 w-4" /> },
-  { id: 'messages', label: 'Important Messages', icon: <MessageSquare className="h-4 w-4" /> },
-  { id: 'statistics', label: 'Statistics', icon: <BarChart3 className="h-4 w-4" /> },
-  { id: 'archive', label: 'Archive', icon: <Archive className="h-4 w-4" /> },
-  { id: 'logs', label: 'Logs', icon: <History className="h-4 w-4" /> },
+  { id: 'alerts', labelKey: 'tabs.alerts', icon: <AlertTriangle className="h-4 w-4" /> },
+  { id: 'messages', labelKey: 'tabs.messages', icon: <MessageSquare className="h-4 w-4" /> },
+  { id: 'statistics', labelKey: 'tabs.statistics', icon: <BarChart3 className="h-4 w-4" /> },
+  { id: 'archive', labelKey: 'tabs.archive', icon: <Archive className="h-4 w-4" /> },
+  { id: 'logs', labelKey: 'tabs.logs', icon: <History className="h-4 w-4" /> },
 ];
 
 interface TabNavigationProps {
@@ -25,6 +26,8 @@ interface TabNavigationProps {
 }
 
 export function TabNavigation({ activeTab, onTabChange, notifications }: TabNavigationProps) {
+  const { t } = useLanguage();
+
   return (
     <nav className="border-b border-border">
       <div className="container px-4">
@@ -48,9 +51,9 @@ export function TabNavigation({ activeTab, onTabChange, notifications }: TabNavi
                 )}
               >
                 {tab.icon}
-                <span className="hidden sm:inline">{tab.label}</span>
+                <span className="hidden sm:inline">{t(tab.labelKey)}</span>
                 {hasNotification && !isActive && (
-                  <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-primary animate-pulse" />
+                  <span className="absolute end-2 top-2 h-2 w-2 rounded-full bg-primary animate-pulse" />
                 )}
               </button>
             );

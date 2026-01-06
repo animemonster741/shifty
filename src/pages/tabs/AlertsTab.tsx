@@ -9,6 +9,7 @@ import { EditAlertModal } from '@/components/alerts/EditAlertModal';
 import { FilterPanel } from '@/components/alerts/FilterPanel';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
 import { Plus, Search, Clock, AlertTriangle } from 'lucide-react';
 import { differenceInHours, isAfter, isBefore, startOfDay, endOfDay, parseISO } from 'date-fns';
 import { toast } from 'sonner';
@@ -24,28 +25,33 @@ const defaultFilters: AlertFilters = {
 
 interface AlertsTabProps {
   alerts: IgnoredAlert[];
+  secondaryAlerts: IgnoredAlert[];
   onAlertsChange: (alerts: IgnoredAlert[]) => void;
+  onSecondaryAlertsChange: (alerts: IgnoredAlert[]) => void;
 }
 
-export function AlertsTab({ alerts, onAlertsChange }: AlertsTabProps) {
+export function AlertsTab({ alerts, secondaryAlerts, onAlertsChange, onSecondaryAlertsChange }: AlertsTabProps) {
   const { user } = useAuth();
   const { t, direction } = useLanguage();
   const [filters, setFilters] = useState<AlertFilters>(defaultFilters);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isSecondaryAddModalOpen, setIsSecondaryAddModalOpen] = useState(false);
   const [selectedAlert, setSelectedAlert] = useState<IgnoredAlert | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [activeTableSource, setActiveTableSource] = useState<'primary' | 'secondary'>('primary');
 
   const activeAlerts = alerts.filter(a => a.status === 'active' || a.status === 'pending');
+  const activeSecondaryAlerts = secondaryAlerts.filter(a => a.status === 'active' || a.status === 'pending');
   const pendingAlerts = alerts.filter(a => a.status === 'pending');
   const expiringSoon = activeAlerts.filter(a => {
     const hours = differenceInHours(a.ignoreUntil, new Date());
     return hours < 6 && hours >= 0;
   });
 
-  // Apply all filters
-  const filteredAlerts = useMemo(() => {
-    return activeAlerts.filter(alert => {
+  // Filter function that applies to any alert array
+  const applyFilters = (alertsToFilter: IgnoredAlert[]) => {
+    return alertsToFilter.filter(alert => {
       // Search filter
       if (filters.searchQuery) {
         const query = filters.searchQuery.toLowerCase();
@@ -87,7 +93,11 @@ export function AlertsTab({ alerts, onAlertsChange }: AlertsTabProps) {
 
       return true;
     });
-  }, [activeAlerts, filters]);
+  };
+
+  // Apply filters to both tables
+  const filteredAlerts = useMemo(() => applyFilters(activeAlerts), [activeAlerts, filters]);
+  const filteredSecondaryAlerts = useMemo(() => applyFilters(activeSecondaryAlerts), [activeSecondaryAlerts, filters]);
 
   const handleAddAlert = (data: any) => {
     const newAlert: IgnoredAlert = {
@@ -99,8 +109,19 @@ export function AlertsTab({ alerts, onAlertsChange }: AlertsTabProps) {
     onAlertsChange([newAlert, ...alerts]);
   };
 
-  const handleViewAlert = (alert: IgnoredAlert) => {
+  const handleAddSecondaryAlert = (data: any) => {
+    const newAlert: IgnoredAlert = {
+      id: `sec-alert-${Date.now()}`,
+      ...data,
+      commentCount: 0,
+      changeLogs: [],
+    };
+    onSecondaryAlertsChange([newAlert, ...secondaryAlerts]);
+  };
+
+  const handleViewAlert = (alert: IgnoredAlert, source: 'primary' | 'secondary') => {
     setSelectedAlert(alert);
+    setActiveTableSource(source);
     setIsDetailModalOpen(true);
   };
 
@@ -110,11 +131,18 @@ export function AlertsTab({ alerts, onAlertsChange }: AlertsTabProps) {
   };
 
   const handleUpdateAlert = (updatedAlert: IgnoredAlert, changeLogs: AlertChangeLog[]) => {
-    onAlertsChange(alerts.map(a => a.id === updatedAlert.id ? updatedAlert : a));
+    if (activeTableSource === 'primary') {
+      onAlertsChange(alerts.map(a => a.id === updatedAlert.id ? updatedAlert : a));
+    } else {
+      onSecondaryAlertsChange(secondaryAlerts.map(a => a.id === updatedAlert.id ? updatedAlert : a));
+    }
   };
 
-  const handleDeleteAlert = (alertId: string) => {
-    const alertToDelete = alerts.find(a => a.id === alertId);
+  const handleDeleteAlert = (alertId: string, source: 'primary' | 'secondary') => {
+    const alertsSource = source === 'primary' ? alerts : secondaryAlerts;
+    const onChangeHandler = source === 'primary' ? onAlertsChange : onSecondaryAlertsChange;
+    const alertToDelete = alertsSource.find(a => a.id === alertId);
+    
     if (!alertToDelete) return;
 
     // Only active/pending alerts can be deleted (archived via status change)
@@ -133,13 +161,16 @@ export function AlertsTab({ alerts, onAlertsChange }: AlertsTabProps) {
       modifiedTime: new Date(),
     };
 
-    onAlertsChange(alerts.map(a => a.id === alertId ? updatedAlert : a));
+    onChangeHandler(alertsSource.map(a => a.id === alertId ? updatedAlert : a));
     toast.success('Alert deleted and moved to archive');
   };
 
   const handleSearchChange = (value: string) => {
     setFilters(prev => ({ ...prev, searchQuery: value }));
   };
+
+  const totalActiveAlerts = activeAlerts.length + activeSecondaryAlerts.length;
+  const hasActiveFilters = filters.team !== 'all' || filters.system !== 'all' || filters.dateFrom || filters.dateTo;
 
   return (
     <div className="space-y-6 animate-fade-in" dir={direction}>
@@ -149,7 +180,7 @@ export function AlertsTab({ alerts, onAlertsChange }: AlertsTabProps) {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">{t('alerts.activeAlerts')}</p>
-              <p className="text-2xl font-bold">{activeAlerts.length}</p>
+              <p className="text-2xl font-bold">{totalActiveAlerts}</p>
             </div>
             <div className="p-2 rounded-lg bg-primary/10">
               <AlertTriangle className="h-5 w-5 text-primary" />
@@ -215,24 +246,51 @@ export function AlertsTab({ alerts, onAlertsChange }: AlertsTabProps) {
       </div>
 
       {/* Results info */}
-      {(filters.team !== 'all' || filters.system !== 'all' || filters.dateFrom || filters.dateTo) && (
+      {hasActiveFilters && (
         <div className="text-sm text-muted-foreground">
-          {t('common.showing')} {filteredAlerts.length} {t('common.of')} {activeAlerts.length} {t('alerts.activeAlerts').toLowerCase()}
+          {t('common.showing')} {filteredAlerts.length + filteredSecondaryAlerts.length} {t('common.of')} {totalActiveAlerts} {t('alerts.activeAlerts').toLowerCase()}
         </div>
       )}
 
-      {/* Table */}
-      <AlertsTable
-        alerts={filteredAlerts}
-        onViewAlert={handleViewAlert}
-        onDeleteAlert={handleDeleteAlert}
-      />
+      {/* Primary Table */}
+      <div className="space-y-4">
+        <h2 className="text-lg font-semibold text-foreground">{t('tabs.alerts')}</h2>
+        <AlertsTable
+          alerts={filteredAlerts}
+          onViewAlert={(alert) => handleViewAlert(alert, 'primary')}
+          onDeleteAlert={(alertId) => handleDeleteAlert(alertId, 'primary')}
+        />
+      </div>
+
+      {/* Separator */}
+      <Separator className="my-8" />
+
+      {/* Secondary Table Section */}
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+          <h2 className="text-lg font-semibold text-foreground">{t('alerts.additionalAlerts')}</h2>
+          <Button onClick={() => setIsSecondaryAddModalOpen(true)}>
+            <Plus className="h-4 w-4 me-2" />
+            {t('alerts.addNewAlert')}
+          </Button>
+        </div>
+        <AlertsTable
+          alerts={filteredSecondaryAlerts}
+          onViewAlert={(alert) => handleViewAlert(alert, 'secondary')}
+          onDeleteAlert={(alertId) => handleDeleteAlert(alertId, 'secondary')}
+        />
+      </div>
 
       {/* Modals */}
       <AddAlertModal
         open={isAddModalOpen}
         onOpenChange={setIsAddModalOpen}
         onSubmit={handleAddAlert}
+      />
+      <AddAlertModal
+        open={isSecondaryAddModalOpen}
+        onOpenChange={setIsSecondaryAddModalOpen}
+        onSubmit={handleAddSecondaryAlert}
       />
       <AlertDetailModal
         alert={selectedAlert}

@@ -7,7 +7,7 @@ import { StatisticsTab } from '@/pages/tabs/StatisticsTab';
 import { ArchiveTab } from '@/pages/tabs/ArchiveTab';
 import { LogsTab } from '@/pages/tabs/LogsTab';
 import { TabNotification, AlertChangeLog, IgnoredAlert } from '@/types';
-import { mockAlerts } from '@/data/mockData';
+import { mockAlerts, mockSecondaryAlerts } from '@/data/mockData';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export function Dashboard() {
@@ -21,27 +21,29 @@ export function Dashboard() {
     logs: false,
   });
   const [alerts, setAlerts] = useState<IgnoredAlert[]>(mockAlerts);
+  const [secondaryAlerts, setSecondaryAlerts] = useState<IgnoredAlert[]>(mockSecondaryAlerts);
 
   // Auto-archive expired alerts
   const archiveExpiredAlerts = useCallback(() => {
     const now = new Date();
-    setAlerts(currentAlerts => 
-      currentAlerts.map(alert => {
-        if (
-          (alert.status === 'active' || alert.status === 'pending') &&
-          alert.ignoreUntil &&
-          new Date(alert.ignoreUntil) < now
-        ) {
-          return {
-            ...alert,
-            status: 'expired' as const,
-            archivedTime: now,
-            archiveReason: 'Auto-archived: Expired',
-          };
-        }
-        return alert;
-      })
-    );
+    const archiveIfExpired = (alert: IgnoredAlert): IgnoredAlert => {
+      if (
+        (alert.status === 'active' || alert.status === 'pending') &&
+        alert.ignoreUntil &&
+        new Date(alert.ignoreUntil) < now
+      ) {
+        return {
+          ...alert,
+          status: 'expired' as const,
+          archivedTime: now,
+          archiveReason: 'Auto-archived: Expired',
+        };
+      }
+      return alert;
+    };
+
+    setAlerts(currentAlerts => currentAlerts.map(archiveIfExpired));
+    setSecondaryAlerts(currentAlerts => currentAlerts.map(archiveIfExpired));
   }, []);
 
   // Run on mount and every minute
@@ -51,8 +53,8 @@ export function Dashboard() {
     return () => clearInterval(interval);
   }, [archiveExpiredAlerts]);
 
-  // Collect all logs from all alerts
-  const allLogs: AlertChangeLog[] = alerts
+  // Collect all logs from all alerts (both primary and secondary)
+  const allLogs: AlertChangeLog[] = [...alerts, ...secondaryAlerts]
     .flatMap(alert => alert.changeLogs || [])
     .sort((a, b) => b.changedAt.getTime() - a.changedAt.getTime());
 
@@ -65,6 +67,13 @@ export function Dashboard() {
     setAlerts(newAlerts);
   };
 
+  const handleSecondaryAlertsChange = (newAlerts: IgnoredAlert[]) => {
+    setSecondaryAlerts(newAlerts);
+  };
+
+  // Combine alerts for archive tab
+  const allAlerts = [...alerts, ...secondaryAlerts];
+
   return (
     <div className="min-h-screen bg-background" dir={direction}>
       <Header />
@@ -74,10 +83,17 @@ export function Dashboard() {
         notifications={notifications}
       />
       <main className="container px-4 py-6">
-        {activeTab === 'alerts' && <AlertsTab alerts={alerts} onAlertsChange={handleAlertsChange} />}
+        {activeTab === 'alerts' && (
+          <AlertsTab 
+            alerts={alerts} 
+            secondaryAlerts={secondaryAlerts}
+            onAlertsChange={handleAlertsChange} 
+            onSecondaryAlertsChange={handleSecondaryAlertsChange}
+          />
+        )}
         {activeTab === 'messages' && <MessagesTab />}
         {activeTab === 'statistics' && <StatisticsTab />}
-        {activeTab === 'archive' && <ArchiveTab alerts={alerts} onAlertsChange={handleAlertsChange} />}
+        {activeTab === 'archive' && <ArchiveTab alerts={allAlerts} onAlertsChange={handleAlertsChange} />}
         {activeTab === 'logs' && <LogsTab logs={allLogs} />}
       </main>
     </div>

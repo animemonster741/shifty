@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { IgnoredAlert, AlertFilters } from '@/types';
 import { mockArchivedAlerts } from '@/data/mockData';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +21,7 @@ import {
 } from '@/components/ui/tooltip';
 import { Search, Download, Eye } from 'lucide-react';
 import { format, formatDistanceToNow, isAfter, isBefore, startOfDay, endOfDay, parseISO } from 'date-fns';
+import { he, enUS } from 'date-fns/locale';
 import { toast } from 'sonner';
 
 const defaultFilters: AlertFilters = {
@@ -37,7 +39,9 @@ interface ArchiveTabProps {
 }
 
 export function ArchiveTab({ alerts, onAlertsChange }: ArchiveTabProps) {
+  const { t, language, direction } = useLanguage();
   const [filters, setFilters] = useState<AlertFilters>(defaultFilters);
+  const dateLocale = language === 'he' ? he : enUS;
 
   // Combine passed alerts (deleted ones) with mock archived alerts, filter for archived status
   const archivedAlerts = useMemo(() => {
@@ -95,7 +99,7 @@ export function ArchiveTab({ alerts, onAlertsChange }: ArchiveTabProps) {
 
   const handleExport = () => {
     // Generate CSV content
-    const headers = ['Added By', 'Created Time', 'Team', 'System', 'Device', 'Summary', 'Archived Time', 'Reason'];
+    const headers = [t('alerts.addedBy'), t('alerts.created'), t('alerts.team'), t('alerts.system'), t('common.device'), t('alerts.summary'), t('alerts.archived'), t('common.reason')];
     const rows = filteredAlerts.map(alert => [
       alert.addedByName,
       format(alert.createdTime, 'yyyy-MM-dd HH:mm:ss'),
@@ -120,7 +124,7 @@ export function ArchiveTab({ alerts, onAlertsChange }: ArchiveTabProps) {
     link.click();
     URL.revokeObjectURL(url);
 
-    toast.success(`Exported ${filteredAlerts.length} records to CSV`);
+    toast.success(t('archive.exportedRecords').replace('{count}', String(filteredAlerts.length)));
   };
 
   const handleSearchChange = (value: string) => {
@@ -140,17 +144,30 @@ export function ArchiveTab({ alerts, onAlertsChange }: ArchiveTabProps) {
     }
   };
 
+  const getLocalizedReason = (reason?: string) => {
+    switch (reason) {
+      case 'Expired':
+        return t('status.expired');
+      case 'Deleted':
+        return t('status.deleted');
+      case 'Merged':
+        return t('status.merged');
+      default:
+        return t('status.unknown');
+    }
+  };
+
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in" dir={direction}>
       {/* Actions bar */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             value={filters.searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
-            placeholder="Search archive..."
-            className="pl-9 input-noc"
+            placeholder={t('filter.searchArchive')}
+            className="ps-9 input-noc"
           />
         </div>
         <div className="flex gap-2 items-center">
@@ -160,8 +177,8 @@ export function ArchiveTab({ alerts, onAlertsChange }: ArchiveTabProps) {
             showStatusFilter={true}
           />
           <Button variant="outline" size="sm" onClick={handleExport}>
-            <Download className="h-4 w-4 mr-2" />
-            Export CSV
+            <Download className="h-4 w-4 me-2" />
+            {t('common.exportCsv')}
           </Button>
         </div>
       </div>
@@ -169,9 +186,9 @@ export function ArchiveTab({ alerts, onAlertsChange }: ArchiveTabProps) {
       {/* Archive info */}
       <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/50 border border-border/50">
         <div className="text-sm text-muted-foreground">
-          Showing <span className="font-medium text-foreground">{filteredAlerts.length}</span> of{' '}
-          <span className="font-medium text-foreground">{archivedAlerts.length}</span> archived records
-          | Data retained for compliance and audit purposes
+          {t('common.showing')} <span className="font-medium text-foreground">{filteredAlerts.length}</span> {t('common.of')}{' '}
+          <span className="font-medium text-foreground">{archivedAlerts.length}</span> {t('archive.archivedRecords')}
+          {' | '}{t('archive.retentionNote')}
         </div>
       </div>
 
@@ -181,21 +198,21 @@ export function ArchiveTab({ alerts, onAlertsChange }: ArchiveTabProps) {
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="w-[120px]">Added By</TableHead>
-                <TableHead className="w-[140px]">Created</TableHead>
-                <TableHead className="w-[120px]">Team</TableHead>
-                <TableHead className="w-[120px]">Device</TableHead>
-                <TableHead className="min-w-[200px]">Summary</TableHead>
-                <TableHead className="w-[140px]">Archived</TableHead>
-                <TableHead className="w-[100px]">Reason</TableHead>
-                <TableHead className="w-[80px] text-right">Actions</TableHead>
+                <TableHead className="w-[120px]">{t('alerts.addedBy')}</TableHead>
+                <TableHead className="w-[140px]">{t('alerts.created')}</TableHead>
+                <TableHead className="w-[120px]">{t('alerts.team')}</TableHead>
+                <TableHead className="w-[120px]">{t('common.device')}</TableHead>
+                <TableHead className="min-w-[200px]">{t('alerts.summary')}</TableHead>
+                <TableHead className="w-[140px]">{t('alerts.archived')}</TableHead>
+                <TableHead className="w-[100px]">{t('common.reason')}</TableHead>
+                <TableHead className="w-[80px] text-end">{t('common.actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredAlerts.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
-                    No archived alerts found matching your filters
+                    {t('archive.noAlerts')}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -206,11 +223,11 @@ export function ArchiveTab({ alerts, onAlertsChange }: ArchiveTabProps) {
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       <Tooltip>
-                        <TooltipTrigger className="text-left">
-                          {formatDistanceToNow(alert.createdTime, { addSuffix: true })}
+                        <TooltipTrigger className="text-start">
+                          {formatDistanceToNow(alert.createdTime, { addSuffix: true, locale: dateLocale })}
                         </TooltipTrigger>
                         <TooltipContent>
-                          {format(alert.createdTime, 'PPpp')}
+                          {format(alert.createdTime, 'PPpp', { locale: dateLocale })}
                         </TooltipContent>
                       </Tooltip>
                     </TableCell>
@@ -230,18 +247,18 @@ export function ArchiveTab({ alerts, onAlertsChange }: ArchiveTabProps) {
                     <TableCell className="text-muted-foreground">
                       {alert.archivedTime && (
                         <Tooltip>
-                          <TooltipTrigger className="text-left">
-                            {formatDistanceToNow(alert.archivedTime, { addSuffix: true })}
+                          <TooltipTrigger className="text-start">
+                            {formatDistanceToNow(alert.archivedTime, { addSuffix: true, locale: dateLocale })}
                           </TooltipTrigger>
                           <TooltipContent>
-                            {format(alert.archivedTime, 'PPpp')}
+                            {format(alert.archivedTime, 'PPpp', { locale: dateLocale })}
                           </TooltipContent>
                         </Tooltip>
                       )}
                     </TableCell>
                     <TableCell>
                       <Badge variant={getReasonBadgeVariant(alert.archiveReason)}>
-                        {alert.archiveReason || 'Unknown'}
+                        {getLocalizedReason(alert.archiveReason)}
                       </Badge>
                     </TableCell>
                     <TableCell>

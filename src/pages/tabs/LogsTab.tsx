@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { AlertChangeLog } from '@/types';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +26,7 @@ import {
 } from '@/components/ui/select';
 import { Search, Download, History, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { format, formatDistanceToNow, isAfter, isBefore, startOfDay, endOfDay, parseISO } from 'date-fns';
+import { he, enUS } from 'date-fns/locale';
 import { toast } from 'sonner';
 
 interface LogsTabProps {
@@ -35,12 +37,14 @@ type SortField = 'changedByName' | 'changedAt' | 'fieldName' | 'alertId';
 type SortDirection = 'asc' | 'desc';
 
 export function LogsTab({ logs }: LogsTabProps) {
+  const { t, language, direction } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [fieldFilter, setFieldFilter] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [sortField, setSortField] = useState<SortField>('changedAt');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const dateLocale = language === 'he' ? he : enUS;
 
   // Get unique field names for filter
   const fieldNames = useMemo(() => {
@@ -110,7 +114,7 @@ export function LogsTab({ logs }: LogsTabProps) {
   };
 
   const handleExport = () => {
-    const headers = ['Changed By', 'Changed At', 'Alert ID', 'Field', 'Old Value', 'New Value'];
+    const headers = [t('logs.changedBy'), t('logs.changedAt'), t('logs.alertId'), t('logs.field'), t('logs.oldValue'), t('logs.newValue')];
     const rows = filteredLogs.map(log => [
       log.changedByName,
       format(log.changedAt, 'yyyy-MM-dd HH:mm:ss'),
@@ -133,7 +137,7 @@ export function LogsTab({ logs }: LogsTabProps) {
     link.click();
     URL.revokeObjectURL(url);
 
-    toast.success(`Exported ${filteredLogs.length} log entries to CSV`);
+    toast.success(t('logs.exportedLogs').replace('{count}', String(filteredLogs.length)));
   };
 
   const handleClearFilters = () => {
@@ -147,7 +151,7 @@ export function LogsTab({ logs }: LogsTabProps) {
     <Button
       variant="ghost"
       size="sm"
-      className="-ml-3 h-8 gap-1 font-semibold hover:bg-transparent"
+      className="-ms-3 h-8 gap-1 font-semibold hover:bg-transparent"
       onClick={() => handleSort(field)}
     >
       {children}
@@ -166,16 +170,16 @@ export function LogsTab({ logs }: LogsTabProps) {
   const hasActiveFilters = searchQuery || fieldFilter !== 'all' || dateFrom || dateTo;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in" dir={direction}>
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="p-2 rounded-lg bg-primary/10">
           <History className="h-5 w-5 text-primary" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold">Change Logs</h2>
+          <h2 className="text-lg font-semibold">{t('logs.title')}</h2>
           <p className="text-sm text-muted-foreground">
-            Track all modifications made to alerts for auditing purposes
+            {t('logs.description')}
           </p>
         </div>
       </div>
@@ -184,21 +188,21 @@ export function LogsTab({ logs }: LogsTabProps) {
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div className="flex flex-wrap gap-3 items-center">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search logs..."
-              className="pl-9 w-[200px] input-noc"
+              placeholder={t('filter.searchLogs')}
+              className="ps-9 w-[200px] input-noc"
             />
           </div>
           
           <Select value={fieldFilter} onValueChange={setFieldFilter}>
             <SelectTrigger className="w-[160px] input-noc">
-              <SelectValue placeholder="All Fields" />
+              <SelectValue placeholder={t('filter.allFields')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Fields</SelectItem>
+              <SelectItem value="all">{t('filter.allFields')}</SelectItem>
               {fieldNames.map(field => (
                 <SelectItem key={field} value={field}>
                   {field}
@@ -211,7 +215,7 @@ export function LogsTab({ logs }: LogsTabProps) {
             type="date"
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
-            placeholder="From"
+            placeholder={t('common.from')}
             className="w-[140px] input-noc"
           />
           
@@ -219,28 +223,28 @@ export function LogsTab({ logs }: LogsTabProps) {
             type="date"
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
-            placeholder="To"
+            placeholder={t('common.to')}
             className="w-[140px] input-noc"
           />
 
           {hasActiveFilters && (
             <Button variant="ghost" size="sm" onClick={handleClearFilters}>
-              Clear Filters
+              {t('filter.clearFilters')}
             </Button>
           )}
         </div>
 
         <Button variant="outline" size="sm" onClick={handleExport} disabled={filteredLogs.length === 0}>
-          <Download className="h-4 w-4 mr-2" />
-          Export CSV
+          <Download className="h-4 w-4 me-2" />
+          {t('common.exportCsv')}
         </Button>
       </div>
 
       {/* Results info */}
       <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/50 border border-border/50">
         <div className="text-sm text-muted-foreground">
-          Showing <span className="font-medium text-foreground">{filteredLogs.length}</span> of{' '}
-          <span className="font-medium text-foreground">{logs.length}</span> log entries
+          {t('common.showing')} <span className="font-medium text-foreground">{filteredLogs.length}</span> {t('common.of')}{' '}
+          <span className="font-medium text-foreground">{logs.length}</span> {t('logs.logEntries')}
         </div>
       </div>
 
@@ -251,19 +255,19 @@ export function LogsTab({ logs }: LogsTabProps) {
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead className="w-[140px]">
-                  <SortableHeader field="changedByName">Changed By</SortableHeader>
+                  <SortableHeader field="changedByName">{t('logs.changedBy')}</SortableHeader>
                 </TableHead>
                 <TableHead className="w-[160px]">
-                  <SortableHeader field="changedAt">Changed At</SortableHeader>
+                  <SortableHeader field="changedAt">{t('logs.changedAt')}</SortableHeader>
                 </TableHead>
                 <TableHead className="w-[120px]">
-                  <SortableHeader field="alertId">Alert ID</SortableHeader>
+                  <SortableHeader field="alertId">{t('logs.alertId')}</SortableHeader>
                 </TableHead>
                 <TableHead className="w-[140px]">
-                  <SortableHeader field="fieldName">Field</SortableHeader>
+                  <SortableHeader field="fieldName">{t('logs.field')}</SortableHeader>
                 </TableHead>
-                <TableHead className="min-w-[200px]">Old Value</TableHead>
-                <TableHead className="min-w-[200px]">New Value</TableHead>
+                <TableHead className="min-w-[200px]">{t('logs.oldValue')}</TableHead>
+                <TableHead className="min-w-[200px]">{t('logs.newValue')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -271,8 +275,8 @@ export function LogsTab({ logs }: LogsTabProps) {
                 <TableRow>
                   <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
                     {logs.length === 0 
-                      ? 'No change logs recorded yet'
-                      : 'No log entries match your filters'
+                      ? t('logs.noLogs')
+                      : t('logs.noMatch')
                     }
                   </TableCell>
                 </TableRow>
@@ -284,11 +288,11 @@ export function LogsTab({ logs }: LogsTabProps) {
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       <Tooltip>
-                        <TooltipTrigger className="text-left">
-                          {formatDistanceToNow(log.changedAt, { addSuffix: true })}
+                        <TooltipTrigger className="text-start">
+                          {formatDistanceToNow(log.changedAt, { addSuffix: true, locale: dateLocale })}
                         </TooltipTrigger>
                         <TooltipContent>
-                          {format(log.changedAt, 'PPpp')}
+                          {format(log.changedAt, 'PPpp', { locale: dateLocale })}
                         </TooltipContent>
                       </Tooltip>
                     </TableCell>
@@ -304,12 +308,12 @@ export function LogsTab({ logs }: LogsTabProps) {
                     </TableCell>
                     <TableCell>
                       <p className="text-sm text-muted-foreground line-clamp-2">
-                        {log.oldValue || '(empty)'}
+                        {log.oldValue || t('logs.empty')}
                       </p>
                     </TableCell>
                     <TableCell>
                       <p className="text-sm line-clamp-2">
-                        {log.newValue || '(empty)'}
+                        {log.newValue || t('logs.empty')}
                       </p>
                     </TableCell>
                   </TableRow>

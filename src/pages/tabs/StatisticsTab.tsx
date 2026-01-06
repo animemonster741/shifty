@@ -4,38 +4,41 @@ import {
   TimeSeriesChart,
   StatusDistributionChart,
 } from '@/components/statistics/StatisticsCharts';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { AlertTriangle, Clock, Archive, CheckCircle } from 'lucide-react';
 
 export function StatisticsTab() {
+  const { t, direction } = useLanguage();
+
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in" dir={direction}>
       {/* Overview cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Total Active Ignores"
+          title={t('stats.totalActiveIgnores')}
           value={45}
-          subtitle="Current count"
+          subtitle={t('stats.currentCount')}
           icon={<AlertTriangle className="h-5 w-5" />}
-          trend={{ value: 12, label: 'vs last week' }}
+          trend={{ value: 12, label: t('stats.vsLastWeek') }}
         />
         <StatCard
-          title="Created Today"
+          title={t('stats.createdToday')}
           value={8}
-          subtitle="Rolling 24h"
+          subtitle={t('stats.rolling24h')}
           icon={<CheckCircle className="h-5 w-5" />}
           variant="success"
         />
         <StatCard
-          title="Expiring Soon"
+          title={t('stats.expiringSoon')}
           value={3}
-          subtitle="Within 6 hours"
+          subtitle={t('stats.within6Hours')}
           icon={<Clock className="h-5 w-5" />}
           variant="warning"
         />
         <StatCard
-          title="Total Archived"
+          title={t('stats.totalArchived')}
           value={128}
-          subtitle="All time"
+          subtitle={t('stats.allTime')}
           icon={<Archive className="h-5 w-5" />}
         />
       </div>
@@ -52,7 +55,7 @@ export function StatisticsTab() {
         </div>
         <div className="lg:col-span-2">
           <div className="card-elevated rounded-lg p-6">
-            <h3 className="font-semibold mb-4">Top Recurring Alerts</h3>
+            <h3 className="font-semibold mb-4">{t('stats.topRecurring')}</h3>
             <div className="space-y-3">
               {[
                 { device: 'RTR-CORE-01', count: 12, summary: 'High CPU utilization' },
@@ -71,9 +74,9 @@ export function StatisticsTab() {
                       {alert.summary}
                     </p>
                   </div>
-                  <div className="ml-4 text-right">
+                  <div className="ms-4 text-end">
                     <p className="text-lg font-bold">{alert.count}</p>
-                    <p className="text-xs text-muted-foreground">ignores</p>
+                    <p className="text-xs text-muted-foreground">{t('stats.ignores')}</p>
                   </div>
                 </div>
               ))}

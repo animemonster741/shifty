@@ -200,8 +200,8 @@ export function AdminPage() {
     }
 
     // Check for duplicate
-    if (teams.some(t => t.name.toLowerCase() === newTeamName.trim().toLowerCase())) {
-      setAddTeamError('Team name already exists');
+    if (teams.some(team => team.name.toLowerCase() === newTeamName.trim().toLowerCase())) {
+      setAddTeamError(t('admin.teamExists'));
       return;
     }
 
@@ -213,7 +213,7 @@ export function AdminPage() {
 
       if (error) throw error;
 
-      toast.success('Team created successfully');
+      toast.success(t('admin.teamCreated'));
       setNewTeamName('');
       fetchTeams();
     } catch (error: any) {
@@ -231,7 +231,7 @@ export function AdminPage() {
     
     // Prevent admin from removing their own admin role
     if (userId === user?.id && newRole !== 'admin') {
-      toast.error('You cannot remove your own admin role');
+      toast.error(t('admin.cannotRemoveOwnRole'));
       setPendingRoleChange(null);
       return;
     }
@@ -257,7 +257,7 @@ export function AdminPage() {
           new_role: newRole,
         });
 
-      toast.success(`User role updated to ${newRole}`);
+      toast.success(t('admin.roleUpdated').replace('{role}', newRole === 'admin' ? t('admin.admin') : t('admin.regularUser')));
       fetchUsers();
     } catch (error: any) {
       console.error('Error changing role:', error);
@@ -447,7 +447,7 @@ export function AdminPage() {
                             </TableCell>
                             <TableCell>
                               {u.id === user?.id ? (
-                                <span className="text-xs text-muted-foreground">(You)</span>
+                                <span className="text-xs text-muted-foreground">{t('admin.you')}</span>
                               ) : (
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
@@ -467,10 +467,10 @@ export function AdminPage() {
                                     <AlertDialogHeader>
                                       <AlertDialogTitle>{t('admin.confirmRoleChange')}</AlertDialogTitle>
                                       <AlertDialogDescription>
-                                        Are you sure you want to change {u.full_name}'s role from{' '}
-                                        <strong>{u.role}</strong> to{' '}
-                                        <strong>{u.role === 'admin' ? 'user' : 'admin'}</strong>?
-                                        This change will take effect immediately.
+                                        {t('admin.roleChangeConfirmDesc')
+                                          .replace('{name}', u.full_name)
+                                          .replace('{oldRole}', u.role === 'admin' ? t('admin.admin') : t('admin.regularUser'))
+                                          .replace('{newRole}', u.role === 'admin' ? t('admin.regularUser') : t('admin.admin'))}
                                       </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
@@ -511,7 +511,7 @@ export function AdminPage() {
                     <Input
                       id="newTeamName"
                       type="text"
-                      placeholder="Enter team name"
+                      placeholder={t('admin.enterTeamName')}
                       value={newTeamName}
                       onChange={(e) => { setNewTeamName(e.target.value); setAddTeamError(''); }}
                       className="input-noc"

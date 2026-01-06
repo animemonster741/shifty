@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { IgnoredAlert, AlertFilters, AlertChangeLog } from '@/types';
 import { AlertsTable } from '@/components/alerts/AlertsTable';
 import { AddAlertModal } from '@/components/alerts/AddAlertModal';
@@ -28,6 +29,7 @@ interface AlertsTabProps {
 
 export function AlertsTab({ alerts, onAlertsChange }: AlertsTabProps) {
   const { user } = useAuth();
+  const { t, direction } = useLanguage();
   const [filters, setFilters] = useState<AlertFilters>(defaultFilters);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedAlert, setSelectedAlert] = useState<IgnoredAlert | null>(null);
@@ -140,13 +142,13 @@ export function AlertsTab({ alerts, onAlertsChange }: AlertsTabProps) {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in" dir={direction}>
       {/* Stats overview */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="stat-card">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Active Ignores</p>
+              <p className="text-sm text-muted-foreground">{t('alerts.activeAlerts')}</p>
               <p className="text-2xl font-bold">{activeAlerts.length}</p>
             </div>
             <div className="p-2 rounded-lg bg-primary/10">
@@ -157,7 +159,7 @@ export function AlertsTab({ alerts, onAlertsChange }: AlertsTabProps) {
         <div className="stat-card">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Expiring Soon</p>
+              <p className="text-sm text-muted-foreground">{t('alerts.expiringSoon')}</p>
               <p className="text-2xl font-bold text-warning">{expiringSoon.length}</p>
             </div>
             <div className="p-2 rounded-lg bg-warning/10">
@@ -169,7 +171,7 @@ export function AlertsTab({ alerts, onAlertsChange }: AlertsTabProps) {
           <div className="stat-card sm:col-span-2 lg:col-span-2 !border-warning/50">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Pending Approvals</p>
+                <p className="text-sm text-muted-foreground">{t('alerts.pendingApproval')}</p>
                 <p className="text-2xl font-bold text-warning">{pendingAlerts.length}</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Exception ignores awaiting your approval
@@ -178,9 +180,10 @@ export function AlertsTab({ alerts, onAlertsChange }: AlertsTabProps) {
               <Button 
                 variant="warning" 
                 size="sm"
+                className="bg-amber-500 hover:bg-amber-600 text-white font-medium"
                 onClick={() => setFilters(prev => ({ ...prev, status: 'pending' }))}
               >
-                Review Now
+                {t('alerts.reviewNow')}
               </Button>
             </div>
           </div>
@@ -190,12 +193,12 @@ export function AlertsTab({ alerts, onAlertsChange }: AlertsTabProps) {
       {/* Actions bar */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             value={filters.searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
-            placeholder="Search alerts..."
-            className="pl-9 input-noc"
+            placeholder={t('filter.searchPlaceholder')}
+            className="ps-9 input-noc"
           />
         </div>
         <div className="flex gap-2 items-center">
@@ -205,8 +208,8 @@ export function AlertsTab({ alerts, onAlertsChange }: AlertsTabProps) {
             showStatusFilter={false}
           />
           <Button onClick={() => setIsAddModalOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Ignore
+            <Plus className="h-4 w-4 me-2" />
+            {t('alerts.addAlert')}
           </Button>
         </div>
       </div>
@@ -214,7 +217,7 @@ export function AlertsTab({ alerts, onAlertsChange }: AlertsTabProps) {
       {/* Results info */}
       {(filters.team !== 'all' || filters.system !== 'all' || filters.dateFrom || filters.dateTo) && (
         <div className="text-sm text-muted-foreground">
-          Showing {filteredAlerts.length} of {activeAlerts.length} active alerts
+          {t('common.showing')} {filteredAlerts.length} {t('common.of')} {activeAlerts.length} {t('alerts.activeAlerts').toLowerCase()}
         </div>
       )}
 

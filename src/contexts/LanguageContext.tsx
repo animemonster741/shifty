@@ -178,6 +178,8 @@ export const translations: Translations = {
   'archive.retentionNote': { en: 'Data retained for compliance and audit purposes', he: 'הנתונים נשמרים למטרות תאימות וביקורת' },
   'archive.archivedRecords': { en: 'archived records', he: 'רשומות בארכיון' },
   'archive.exportedRecords': { en: 'Exported {count} records to CSV', he: 'יוצאו {count} רשומות לקובץ CSV' },
+  'archive.addToArchive': { en: 'Add Alert to Archive', he: 'הוספת התראה לארכיון' },
+  'archive.secondaryArchive': { en: 'Additional Archive', he: 'ארכיון נוסף' },
 
   // Logs
   'logs.title': { en: 'Change Logs', he: 'יומן שינויים' },

@@ -26,6 +26,7 @@ import { AlertTriangle, Clock, Zap } from 'lucide-react';
 import { addHours, format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { checkApprovalRequired, getApprovalReasonText } from '@/utils/approvalLogic';
 
 interface AddAlertModalProps {
   open: boolean;
@@ -129,8 +130,11 @@ export function AddAlertModal({ open, onOpenChange, onSubmit }: AddAlertModalPro
     expires: isHebrew ? 'פג תוקף:' : 'Expires:',
     exceptionIgnore: isHebrew ? 'התעלמות חריגה' : 'Exception Ignore',
     exceptionMessage: isHebrew 
-      ? 'התעלמות מעל 72 שעות דורשת אישור מנהל. הבקשה תישלח לאישור.'
-      : 'Ignores exceeding 72 hours require manager approval. This will be submitted as a pending request.',
+      ? 'התעלמות מעל 48 שעות דורשת אישור מנהל. הבקשה תישלח לאישור.'
+      : 'Ignores exceeding 48 hours require manager approval. This will be submitted as a pending request.',
+    weekendException: isHebrew 
+      ? 'אישור אוטומטי (נוהל סופ"ש) - התראות שנוצרות בין רביעי 17:00 לראשון 08:00 ופוקעות עד ראשון 08:00 אינן דורשות אישור.'
+      : 'Automatic approval (Weekend rule) - Alerts created Wed 17:00 - Sun 08:00 expiring by Sun 08:00 don\'t require approval.',
     selectTeam: isHebrew ? 'בחר צוות' : 'Select team',
     managerPlaceholder: isHebrew ? 'שם מנהל או הפניה' : 'Manager name or reference',
     systemPlaceholder: isHebrew ? 'לדוגמה: Core Router, Firewall' : 'e.g., Core Router, Firewall',
@@ -140,8 +144,9 @@ export function AddAlertModal({ open, onOpenChange, onSubmit }: AddAlertModalPro
     errorSelectDuration: isHebrew ? 'נא לבחור משך זמן להתעלמות' : 'Please select an ignore duration',
     errorRequiredFields: isHebrew ? 'נא למלא את כל השדות הנדרשים' : 'Please fill in all required fields',
     errorPasteContent: isHebrew ? 'נא להדביק תוכן התראה' : 'Please paste alert content',
-    warningApproval: isHebrew ? 'ההתראה נשלחה לאישור מנהל (משך מעל 72 שעות)' : 'Alert submitted for manager approval (>72h duration)',
+    warningApproval: isHebrew ? 'ההתראה נשלחה לאישור מנהל (מעל 48 שעות)' : 'Alert sent for manager approval (over 48h)',
     successCreated: isHebrew ? 'התראה להתעלמות נוצרה בהצלחה' : 'Ignored alert created successfully',
+    successWeekendRule: isHebrew ? 'התראה נוצרה - אישור אוטומטי (נוהל סופ"ש)' : 'Alert created - Automatic approval (Weekend rule)',
     optional: isHebrew ? '(אופציונלי)' : '(Optional)',
   };
 
@@ -156,7 +161,12 @@ export function AddAlertModal({ open, onOpenChange, onSubmit }: AddAlertModalPro
   };
 
   const ignoreUntil = getIgnoreUntil();
-  const isExceptionIgnore = ignoreUntil && (ignoreUntil.getTime() - new Date().getTime()) > 72 * 60 * 60 * 1000;
+  const now = new Date();
+  
+  // Use the new approval logic utility
+  const approvalCheck = ignoreUntil ? checkApprovalRequired(now, ignoreUntil) : null;
+  const requiresApproval = approvalCheck?.requiresApproval ?? false;
+  const isWeekendException = approvalCheck?.reason === 'weekend_exception';
   const isAdmin = user?.role === 'admin';
 
   const handleAlertPaste = useCallback((content: string) => {
@@ -204,18 +214,21 @@ export function AddAlertModal({ open, onOpenChange, onSubmit }: AddAlertModalPro
     const alertData = {
       ...formData,
       ignoreUntil,
-      status: isExceptionIgnore && !isAdmin ? 'pending' : 'active',
+      status: requiresApproval && !isAdmin ? 'pending' : 'active',
       addedBy: user?.employeeId,
       addedByName: user?.fullName,
       createdTime: parsedData.createdTime || new Date(),
+      approvalReason: requiresApproval ? 'duration' : (isWeekendException ? 'weekend_exception' : undefined),
     };
 
     onSubmit(alertData);
     onOpenChange(false);
     resetForm();
 
-    if (isExceptionIgnore && !isAdmin) {
+    if (requiresApproval && !isAdmin) {
       toast.warning(t.warningApproval);
+    } else if (isWeekendException) {
+      toast.success(t.successWeekendRule);
     } else {
       toast.success(t.successCreated);
     }
@@ -419,7 +432,7 @@ export function AddAlertModal({ open, onOpenChange, onSubmit }: AddAlertModalPro
               )}
             </div>
 
-            {isExceptionIgnore && !isAdmin && (
+            {requiresApproval && !isAdmin && (
               <div className="flex items-start gap-3 rounded-lg border border-warning/50 bg-warning/10 p-3">
                 <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
                 <div>
@@ -448,7 +461,7 @@ export function AddAlertModal({ open, onOpenChange, onSubmit }: AddAlertModalPro
                 {t.cancel}
               </Button>
               <Button type="submit">
-                {isExceptionIgnore && !isAdmin ? t.submitForApproval : t.addIgnore}
+                {requiresApproval && !isAdmin ? t.submitForApproval : t.addIgnore}
               </Button>
             </DialogFooter>
           </form>

@@ -10,7 +10,19 @@ import { FilterPanel } from '@/components/alerts/FilterPanel';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-import { Plus, Search, Clock, AlertTriangle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Plus, Search, Clock, AlertTriangle, Check, X } from 'lucide-react';
 import { differenceInHours, isAfter, isBefore, startOfDay, endOfDay, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -41,9 +53,13 @@ export function AlertsTab({ alerts, secondaryAlerts, onAlertsChange, onSecondary
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [activeTableSource, setActiveTableSource] = useState<'primary' | 'secondary'>('primary');
 
-  const activeAlerts = alerts.filter(a => a.status === 'active' || a.status === 'pending');
-  const activeSecondaryAlerts = secondaryAlerts.filter(a => a.status === 'active' || a.status === 'pending');
+  // Filter active alerts (only 'active' status, not pending)
+  const activeAlerts = alerts.filter(a => a.status === 'active');
+  const activeSecondaryAlerts = secondaryAlerts.filter(a => a.status === 'active');
+  // Pending alerts require approval
   const pendingAlerts = alerts.filter(a => a.status === 'pending');
+  const pendingSecondaryAlerts = secondaryAlerts.filter(a => a.status === 'pending');
+  const allPendingAlerts = [...pendingAlerts, ...pendingSecondaryAlerts];
   const expiringSoon = activeAlerts.filter(a => {
     const hours = differenceInHours(a.ignoreUntil, new Date());
     return hours < 6 && hours >= 0;
@@ -169,6 +185,46 @@ export function AlertsTab({ alerts, secondaryAlerts, onAlertsChange, onSecondary
     setFilters(prev => ({ ...prev, searchQuery: value }));
   };
 
+  const handleApproveAlert = (alert: IgnoredAlert) => {
+    const updatedAlert: IgnoredAlert = {
+      ...alert,
+      status: 'active',
+      approvedBy: user?.employeeId,
+      approvalTime: new Date(),
+      modifiedBy: user?.employeeId,
+      modifiedByName: user?.fullName,
+      modifiedTime: new Date(),
+    };
+
+    // Determine which list the alert belongs to
+    if (alerts.find(a => a.id === alert.id)) {
+      onAlertsChange(alerts.map(a => a.id === alert.id ? updatedAlert : a));
+    } else {
+      onSecondaryAlertsChange(secondaryAlerts.map(a => a.id === alert.id ? updatedAlert : a));
+    }
+    toast.success(t('alerts.alertApproved'));
+  };
+
+  const handleRejectAlert = (alert: IgnoredAlert) => {
+    const updatedAlert: IgnoredAlert = {
+      ...alert,
+      status: 'deleted',
+      archivedTime: new Date(),
+      archiveReason: 'Rejected by admin',
+      modifiedBy: user?.employeeId,
+      modifiedByName: user?.fullName,
+      modifiedTime: new Date(),
+    };
+
+    // Determine which list the alert belongs to
+    if (alerts.find(a => a.id === alert.id)) {
+      onAlertsChange(alerts.map(a => a.id === alert.id ? updatedAlert : a));
+    } else {
+      onSecondaryAlertsChange(secondaryAlerts.map(a => a.id === alert.id ? updatedAlert : a));
+    }
+    toast.success(t('alerts.alertRejected'));
+  };
+
   const totalActiveAlerts = activeAlerts.length + activeSecondaryAlerts.length;
   const hasActiveFilters = filters.team !== 'all' || filters.system !== 'all' || filters.dateFrom || filters.dateTo;
 
@@ -198,14 +254,14 @@ export function AlertsTab({ alerts, secondaryAlerts, onAlertsChange, onSecondary
             </div>
           </div>
         </div>
-        {user?.role === 'admin' && pendingAlerts.length > 0 && (
+        {user?.role === 'admin' && allPendingAlerts.length > 0 && (
           <div className="stat-card sm:col-span-2 lg:col-span-2 !border-warning/50">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">{t('alerts.pendingApproval')}</p>
-                <p className="text-2xl font-bold text-warning">{pendingAlerts.length}</p>
+                <p className="text-2xl font-bold text-warning">{allPendingAlerts.length}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Exception ignores awaiting your approval
+                  {t('alerts.awaitingApproval')}
                 </p>
               </div>
               <Button 
@@ -220,6 +276,100 @@ export function AlertsTab({ alerts, secondaryAlerts, onAlertsChange, onSecondary
           </div>
         )}
       </div>
+
+      {/* Pending Approvals Review Queue - Only shown to admins when there are pending alerts */}
+      {user?.role === 'admin' && allPendingAlerts.length > 0 && filters.status === 'pending' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-warning">{t('alerts.pendingReview')}</h2>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setFilters(prev => ({ ...prev, status: 'all' }))}
+            >
+              {t('filter.clearFilters')}
+            </Button>
+          </div>
+          <div className="grid gap-4">
+            {allPendingAlerts.map(alert => (
+              <div 
+                key={alert.id} 
+                className="rounded-lg border border-warning/50 bg-warning/5 p-4"
+              >
+                <div className="flex flex-col sm:flex-row gap-4 justify-between">
+                  <div className="space-y-2 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium">{alert.summary || 'No summary'}</span>
+                      <Badge variant="secondary" className="bg-warning/20 text-warning border-warning/30">
+                        {t('alerts.durationOver48h')}
+                      </Badge>
+                    </div>
+                    <div className="text-sm text-muted-foreground space-y-1">
+                      <p><span className="font-medium">{t('alerts.team')}:</span> {alert.team}</p>
+                      <p><span className="font-medium">{t('alerts.system')}:</span> {alert.system}</p>
+                      <p><span className="font-medium">{t('alerts.instructionGivenBy')}:</span> {alert.instructionGivenBy}</p>
+                      <p><span className="font-medium">{t('alerts.addedBy')}:</span> {alert.addedByName}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 items-start">
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                          <X className="h-4 w-4 me-1" />
+                          {t('alerts.reject')}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent dir={direction}>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>{t('alerts.rejectConfirm')}</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            {t('alerts.rejectConfirmDesc')}
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                          <AlertDialogAction 
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={() => handleRejectAlert(alert)}
+                          >
+                            {t('alerts.reject')}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white">
+                          <Check className="h-4 w-4 me-1" />
+                          {t('alerts.approve')}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent dir={direction}>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>{t('alerts.approveConfirm')}</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            {t('alerts.approveConfirmDesc')}
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                          <AlertDialogAction 
+                            className="bg-green-600 hover:bg-green-700"
+                            onClick={() => handleApproveAlert(alert)}
+                          >
+                            {t('alerts.approve')}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <Separator className="my-4" />
+        </div>
+      )}
 
       {/* Actions bar */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
@@ -246,7 +396,7 @@ export function AlertsTab({ alerts, secondaryAlerts, onAlertsChange, onSecondary
       </div>
 
       {/* Results info */}
-      {hasActiveFilters && (
+      {hasActiveFilters && filters.status !== 'pending' && (
         <div className="text-sm text-muted-foreground">
           {t('common.showing')} {filteredAlerts.length + filteredSecondaryAlerts.length} {t('common.of')} {totalActiveAlerts} {t('alerts.activeAlerts').toLowerCase()}
         </div>

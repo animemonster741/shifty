@@ -110,6 +110,18 @@ export const translations: Translations = {
   'admin.cannotRemoveOwnRole': { en: 'You cannot remove your own admin role', he: 'לא ניתן להסיר את תפקיד המנהל שלך' },
   'admin.enterTeamName': { en: 'Enter team name', he: 'הזנת שם צוות' },
   'admin.teamExists': { en: 'Team name already exists', he: 'שם הצוות כבר קיים' },
+  'admin.editTeamName': { en: 'Edit Team Name', he: 'עריכת שם צוות' },
+  'admin.changeUserPassword': { en: 'Change User Password', he: 'שינוי סיסמה למשתמש' },
+  'admin.newPassword': { en: 'New Password', he: 'סיסמה חדשה' },
+  'admin.update': { en: 'Update', he: 'עדכון' },
+  'admin.saveChanges': { en: 'Save Changes', he: 'שמירת שינויים' },
+  'admin.passwordResetSuccess': { en: 'Password updated for {name}', he: 'הסיסמה עודכנה עבור {name}' },
+  'admin.teamUpdateSuccess': { en: 'Team name updated successfully', he: 'שם הצוות עודכן בהצלחה' },
+  'admin.enterNewPassword': { en: 'Enter new password', he: 'הזנת סיסמה חדשה' },
+  'admin.enterNewTeamName': { en: 'Enter new team name', he: 'הזנת שם צוות חדש' },
+  'admin.resetPassword': { en: 'Reset Password', he: 'איפוס סיסמה' },
+  'admin.confirmPasswordReset': { en: 'Reset password for {name}?', he: 'לאפס סיסמה עבור {name}?' },
+  'admin.confirmPasswordResetDesc': { en: 'This will set a new password for the user. They will need to use this new password to log in.', he: 'פעולה זו תגדיר סיסמה חדשה למשתמש. הוא יצטרך להשתמש בסיסמה החדשה כדי להתחבר.' },
 
   // Tabs / Navigation
   'tabs.alerts': { en: 'Paused Alerts', he: 'התראות מושהות' },

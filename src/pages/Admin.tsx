@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { ArrowLeft, Users, Building2, Loader2, Plus, Shield, User as UserIcon, Pencil, Eye, EyeOff } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ArrowLeft, Users, Building2, Loader2, Plus, Shield, User as UserIcon, Pencil, Eye, EyeOff, Key, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -66,6 +67,17 @@ export function AdminPage() {
   
   // Role change
   const [pendingRoleChange, setPendingRoleChange] = useState<{ userId: string; newRole: UserRole } | null>(null);
+
+  // Password reset
+  const [passwordResetModal, setPasswordResetModal] = useState<{ open: boolean; user: UserWithRole | null }>({ open: false, user: null });
+  const [newPasswordInput, setNewPasswordInput] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+
+  // Team editing
+  const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
+  const [editingTeamName, setEditingTeamName] = useState('');
+  const [isUpdatingTeam, setIsUpdatingTeam] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
@@ -267,6 +279,75 @@ export function AdminPage() {
     }
   };
 
+  const handlePasswordReset = async () => {
+    if (!passwordResetModal.user || !newPasswordInput) return;
+    
+    if (newPasswordInput.length < 6) {
+      toast.error(t('settings.passwordMinLength'));
+      return;
+    }
+
+    setIsResettingPassword(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-reset-password', {
+        body: {
+          userId: passwordResetModal.user.id,
+          newPassword: newPasswordInput,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast.success(t('admin.passwordResetSuccess').replace('{name}', passwordResetModal.user.full_name));
+      setPasswordResetModal({ open: false, user: null });
+      setNewPasswordInput('');
+    } catch (error: any) {
+      console.error('Error resetting password:', error);
+      toast.error(error.message || 'Failed to reset password');
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
+  const handleTeamEdit = async (teamId: string, oldName: string) => {
+    if (!editingTeamName.trim() || editingTeamName.trim() === oldName) {
+      setEditingTeamId(null);
+      setEditingTeamName('');
+      return;
+    }
+
+    // Check for duplicate
+    if (teams.some(team => team.id !== teamId && team.name.toLowerCase() === editingTeamName.trim().toLowerCase())) {
+      toast.error(t('admin.teamExists'));
+      return;
+    }
+
+    setIsUpdatingTeam(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-update-team', {
+        body: {
+          teamId,
+          newName: editingTeamName.trim(),
+          oldName,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast.success(t('admin.teamUpdateSuccess'));
+      setEditingTeamId(null);
+      setEditingTeamName('');
+      fetchTeams();
+    } catch (error: any) {
+      console.error('Error updating team:', error);
+      toast.error(error.message || 'Failed to update team');
+    } finally {
+      setIsUpdatingTeam(false);
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -449,40 +530,53 @@ export function AdminPage() {
                               {u.id === user?.id ? (
                                 <span className="text-xs text-muted-foreground">{t('admin.you')}</span>
                               ) : (
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm"
-                                      onClick={() => setPendingRoleChange({ 
-                                        userId: u.id, 
-                                        newRole: u.role === 'admin' ? 'user' : 'admin' 
-                                      })}
-                                    >
-                                      <Pencil className="h-4 w-4 me-1" />
-                                      {t('admin.changeRole')}
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>{t('admin.confirmRoleChange')}</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        {t('admin.roleChangeConfirmDesc')
-                                          .replace('{name}', u.full_name)
-                                          .replace('{oldRole}', u.role === 'admin' ? t('admin.admin') : t('admin.regularUser'))
-                                          .replace('{newRole}', u.role === 'admin' ? t('admin.regularUser') : t('admin.admin'))}
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel onClick={() => setPendingRoleChange(null)}>
-                                        {t('common.cancel')}
-                                      </AlertDialogCancel>
-                                      <AlertDialogAction onClick={handleRoleChange}>
-                                        {t('common.confirm')}
-                                      </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
+                                <div className="flex items-center gap-2">
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm"
+                                        onClick={() => setPendingRoleChange({ 
+                                          userId: u.id, 
+                                          newRole: u.role === 'admin' ? 'user' : 'admin' 
+                                        })}
+                                      >
+                                        <Pencil className="h-4 w-4 me-1" />
+                                        {t('admin.changeRole')}
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>{t('admin.confirmRoleChange')}</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          {t('admin.roleChangeConfirmDesc')
+                                            .replace('{name}', u.full_name)
+                                            .replace('{oldRole}', u.role === 'admin' ? t('admin.admin') : t('admin.regularUser'))
+                                            .replace('{newRole}', u.role === 'admin' ? t('admin.regularUser') : t('admin.admin'))}
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel onClick={() => setPendingRoleChange(null)}>
+                                          {t('common.cancel')}
+                                        </AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleRoleChange}>
+                                          {t('common.confirm')}
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => {
+                                      setPasswordResetModal({ open: true, user: u });
+                                      setNewPasswordInput('');
+                                    }}
+                                  >
+                                    <Key className="h-4 w-4 me-1" />
+                                    {t('admin.resetPassword')}
+                                  </Button>
+                                </div>
                               )}
                             </TableCell>
                           </TableRow>
@@ -559,9 +653,68 @@ export function AdminPage() {
                         key={team.id} 
                         className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
                       >
-                        <div className="flex items-center gap-3">
-                          <Building2 className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">{team.name}</span>
+                        <div className="flex items-center gap-3 flex-1">
+                          <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
+                          {editingTeamId === team.id ? (
+                            <Input
+                              type="text"
+                              value={editingTeamName}
+                              onChange={(e) => setEditingTeamName(e.target.value)}
+                              className="input-noc flex-1 max-w-xs"
+                              placeholder={t('admin.enterNewTeamName')}
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  handleTeamEdit(team.id, team.name);
+                                } else if (e.key === 'Escape') {
+                                  setEditingTeamId(null);
+                                  setEditingTeamName('');
+                                }
+                              }}
+                            />
+                          ) : (
+                            <span className="font-medium">{team.name}</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {editingTeamId === team.id ? (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleTeamEdit(team.id, team.name)}
+                                disabled={isUpdatingTeam}
+                              >
+                                {isUpdatingTeam ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Check className="h-4 w-4 text-green-500" />
+                                )}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  setEditingTeamId(null);
+                                  setEditingTeamName('');
+                                }}
+                                disabled={isUpdatingTeam}
+                              >
+                                <X className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setEditingTeamId(team.id);
+                                setEditingTeamName(team.name);
+                              }}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -571,6 +724,77 @@ export function AdminPage() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Password Reset Modal */}
+        <Dialog 
+          open={passwordResetModal.open} 
+          onOpenChange={(open) => {
+            if (!open) {
+              setPasswordResetModal({ open: false, user: null });
+              setNewPasswordInput('');
+            }
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t('admin.changeUserPassword')}</DialogTitle>
+              <DialogDescription>
+                {passwordResetModal.user && t('admin.confirmPasswordResetDesc')}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="newPasswordInput">{t('admin.newPassword')}</Label>
+                <div className="relative">
+                  <Input
+                    id="newPasswordInput"
+                    type={showNewPassword ? 'text' : 'password'}
+                    placeholder={t('admin.enterNewPassword')}
+                    value={newPasswordInput}
+                    onChange={(e) => setNewPasswordInput(e.target.value)}
+                    className="input-noc pe-10"
+                    minLength={6}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute end-0 top-0 h-full px-3 hover:bg-transparent"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                  >
+                    {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">{t('settings.passwordMinLength')}</p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button 
+                variant="ghost" 
+                onClick={() => {
+                  setPasswordResetModal({ open: false, user: null });
+                  setNewPasswordInput('');
+                }}
+              >
+                {t('common.cancel')}
+              </Button>
+              <Button 
+                variant="glow" 
+                onClick={handlePasswordReset}
+                disabled={isResettingPassword || newPasswordInput.length < 6}
+              >
+                {isResettingPassword ? (
+                  <>
+                    <Loader2 className="me-2 h-4 w-4 animate-spin" />
+                    {t('settings.updating')}
+                  </>
+                ) : (
+                  t('admin.saveChanges')
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

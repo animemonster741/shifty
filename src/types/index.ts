@@ -118,3 +118,28 @@ export const QUICK_DURATIONS = [
   { label: '48 hours', hours: 48 },
   { label: '72 hours', hours: 72 },
 ] as const;
+
+export interface ShiftPreset {
+  id: 'morning' | 'evening' | 'night';
+  labelHe: string;
+  labelEn: string;
+  hour: number;
+  minute: number;
+}
+
+export const SHIFT_PRESETS: ShiftPreset[] = [
+  { id: 'morning', labelHe: 'בוקר (08:00)', labelEn: 'Morning (08:00)', hour: 8, minute: 0 },
+  { id: 'evening', labelHe: 'ערב (15:00)', labelEn: 'Evening (15:00)', hour: 15, minute: 0 },
+  { id: 'night', labelHe: 'לילה (23:00)', labelEn: 'Night (23:00)', hour: 23, minute: 0 },
+];
+
+export const COMMON_HOURS = [
+  { label: '00:00', hour: 0, minute: 0 },
+  { label: '04:00', hour: 4, minute: 0 },
+  { label: '07:00', hour: 7, minute: 0 },
+  { label: '08:00', hour: 8, minute: 0 },
+  { label: '12:00', hour: 12, minute: 0 },
+  { label: '15:00', hour: 15, minute: 0 },
+  { label: '19:00', hour: 19, minute: 0 },
+  { label: '23:00', hour: 23, minute: 0 },
+];

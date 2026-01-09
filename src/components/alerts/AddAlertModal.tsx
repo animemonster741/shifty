@@ -1,7 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { TEAMS, QUICK_DURATIONS, Team } from '@/types';
+import { TEAMS, SHIFT_PRESETS, COMMON_HOURS, Team, ShiftPreset } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,12 +21,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertTriangle, Clock, Zap } from 'lucide-react';
-import { addHours, format } from 'date-fns';
+import { AlertTriangle, Clock, Zap, CalendarIcon, Sun, Sunset, Moon } from 'lucide-react';
+import { format, setHours, setMinutes, isBefore, addDays, startOfDay } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { checkApprovalRequired, getApprovalReasonText } from '@/utils/approvalLogic';
+import { cn } from '@/lib/utils';
 
 interface AddAlertModalProps {
   open: boolean;
@@ -92,10 +99,11 @@ export function AddAlertModal({ open, onOpenChange, onSubmit }: AddAlertModalPro
   const isHebrew = language === 'he';
   
   const [mode, setMode] = useState<'full' | 'quick'>('quick');
-  const [selectedDuration, setSelectedDuration] = useState<number | null>(null);
-  const [customDate, setCustomDate] = useState('');
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [selectedTime, setSelectedTime] = useState<string>('');
   const [alertPasteContent, setAlertPasteContent] = useState('');
   const [parsedData, setParsedData] = useState<ParsedAlertData>({});
+  const [isTimePopoverOpen, setIsTimePopoverOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     instructionGivenBy: '',
@@ -148,17 +156,24 @@ export function AddAlertModal({ open, onOpenChange, onSubmit }: AddAlertModalPro
     successCreated: isHebrew ? 'התראה להתעלמות נוצרה בהצלחה' : 'Ignored alert created successfully',
     successWeekendRule: isHebrew ? 'התראה נוצרה - אישור אוטומטי (נוהל סופ"ש)' : 'Alert created - Automatic approval (Weekend rule)',
     optional: isHebrew ? '(אופציונלי)' : '(Optional)',
+    selectDate: isHebrew ? 'בחירת תאריך' : 'Select Date',
+    selectTime: isHebrew ? 'בחירת שעה' : 'Select Time',
+    today: isHebrew ? 'היום' : 'Today',
+    tomorrow: isHebrew ? 'מחר' : 'Tomorrow',
+    morning: isHebrew ? 'בוקר' : 'Morning',
+    evening: isHebrew ? 'ערב' : 'Evening',
+    night: isHebrew ? 'לילה' : 'Night',
+    autoTomorrow: isHebrew ? 'נקבע אוטומטית למחר' : 'Automatically set to tomorrow',
   };
 
-  const getIgnoreUntil = (): Date | null => {
-    if (selectedDuration) {
-      return addHours(new Date(), selectedDuration);
-    }
-    if (customDate) {
-      return new Date(customDate);
+  const getIgnoreUntil = useCallback((): Date | null => {
+    if (selectedDate && selectedTime) {
+      const [hours, minutes] = selectedTime.split(':').map(Number);
+      let result = setMinutes(setHours(selectedDate, hours), minutes);
+      return result;
     }
     return null;
-  };
+  }, [selectedDate, selectedTime]);
 
   const ignoreUntil = getIgnoreUntil();
   const now = new Date();
@@ -244,30 +259,74 @@ export function AddAlertModal({ open, onOpenChange, onSubmit }: AddAlertModalPro
       summary: '',
       notes: '',
     });
-    setSelectedDuration(null);
-    setCustomDate('');
+    setSelectedDate(undefined);
+    setSelectedTime('');
     setAlertPasteContent('');
     setParsedData({});
   };
 
-  const handleDurationSelect = (hours: number) => {
-    setSelectedDuration(hours);
-    setCustomDate('');
+  // Smart shift button handler with auto-tomorrow logic
+  const handleShiftSelect = useCallback((shift: ShiftPreset) => {
+    const now = new Date();
+    const shiftTimeToday = setMinutes(setHours(startOfDay(now), shift.hour), shift.minute);
+    
+    // If current time is past the shift time, set to tomorrow
+    let targetDate: Date;
+    if (isBefore(now, shiftTimeToday)) {
+      targetDate = startOfDay(now);
+    } else {
+      targetDate = startOfDay(addDays(now, 1));
+      toast.info(t.autoTomorrow, { duration: 2000 });
+    }
+    
+    setSelectedDate(targetDate);
+    setSelectedTime(`${shift.hour.toString().padStart(2, '0')}:${shift.minute.toString().padStart(2, '0')}`);
+  }, [t.autoTomorrow]);
+
+  // Handle common hour selection
+  const handleCommonHourSelect = useCallback((hour: number, minute: number) => {
+    const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+    setSelectedTime(timeStr);
+    setIsTimePopoverOpen(false);
+    
+    // If no date selected, set to today or tomorrow based on time
+    if (!selectedDate) {
+      const now = new Date();
+      const targetTimeToday = setMinutes(setHours(startOfDay(now), hour), minute);
+      
+      if (isBefore(now, targetTimeToday)) {
+        setSelectedDate(startOfDay(now));
+      } else {
+        setSelectedDate(startOfDay(addDays(now, 1)));
+        toast.info(t.autoTomorrow, { duration: 2000 });
+      }
+    }
+  }, [selectedDate, t.autoTomorrow]);
+
+  // Get shift icon
+  const getShiftIcon = (shiftId: string) => {
+    switch (shiftId) {
+      case 'morning': return <Sun className="h-4 w-4" />;
+      case 'evening': return <Sunset className="h-4 w-4" />;
+      case 'night': return <Moon className="h-4 w-4" />;
+      default: return null;
+    }
   };
 
-  // Duration labels in Hebrew
-  const getDurationLabel = (hours: number): string => {
-    if (!isHebrew) {
-      const duration = QUICK_DURATIONS.find(d => d.hours === hours);
-      return duration?.label || `${hours} hours`;
+  // Format date label for display
+  const getDateLabel = useMemo(() => {
+    if (!selectedDate) return '';
+    const today = startOfDay(new Date());
+    const tomorrow = addDays(today, 1);
+    
+    if (selectedDate.getTime() === today.getTime()) {
+      return isHebrew ? 'היום' : 'Today';
+    } else if (selectedDate.getTime() === tomorrow.getTime()) {
+      return isHebrew ? 'מחר' : 'Tomorrow';
     }
-    if (hours === 1) return 'שעה';
-    if (hours < 24) return `${hours} שעות`;
-    if (hours === 24) return 'יום';
-    if (hours === 48) return 'יומיים';
-    if (hours === 72) return '3 ימים';
-    return `${hours} שעות`;
-  };
+    return format(selectedDate, 'dd/MM/yyyy');
+  }, [selectedDate, isHebrew]);
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -403,28 +462,107 @@ export function AddAlertModal({ open, onOpenChange, onSubmit }: AddAlertModalPro
             {/* Common fields for both modes */}
             <div className="space-y-3">
               <Label>{t.ignoreUntil} *</Label>
+              
+              {/* Shift preset buttons */}
               <div className="flex flex-wrap gap-2">
-                {QUICK_DURATIONS.map((duration) => (
+                {SHIFT_PRESETS.map((shift) => (
                   <Button
-                    key={duration.hours}
+                    key={shift.id}
                     type="button"
-                    variant={selectedDuration === duration.hours ? 'default' : 'outline'}
+                    variant={selectedTime === `${shift.hour.toString().padStart(2, '0')}:${shift.minute.toString().padStart(2, '0')}` ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => handleDurationSelect(duration.hours)}
+                    onClick={() => handleShiftSelect(shift)}
+                    className="gap-2"
                   >
-                    {getDurationLabel(duration.hours)}
+                    {getShiftIcon(shift.id)}
+                    {isHebrew ? shift.labelHe : shift.labelEn}
                   </Button>
                 ))}
-                <Input
-                  type="datetime-local"
-                  value={customDate}
-                  onChange={(e) => {
-                    setCustomDate(e.target.value);
-                    setSelectedDuration(null);
-                  }}
-                  className="input-noc w-auto"
-                />
               </div>
+
+              {/* Date and Time pickers */}
+              <div className="flex flex-wrap gap-3 items-center">
+                {/* Date Picker */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-[180px] justify-start text-left font-normal",
+                        !selectedDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="h-4 w-4 me-2" />
+                      {selectedDate ? (
+                        <span>
+                          {getDateLabel}
+                          {getDateLabel !== format(selectedDate, 'dd/MM/yyyy') && (
+                            <span className="text-muted-foreground ms-1">
+                              ({format(selectedDate, 'dd/MM')})
+                            </span>
+                          )}
+                        </span>
+                      ) : (
+                        <span>{t.selectDate}</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={setSelectedDate}
+                      disabled={(date) => date < startOfDay(new Date())}
+                      initialFocus
+                      className="p-3 pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+
+                {/* Time Picker with common hours dropdown */}
+                <Popover open={isTimePopoverOpen} onOpenChange={setIsTimePopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-[140px] justify-start text-left font-normal",
+                        !selectedTime && "text-muted-foreground"
+                      )}
+                    >
+                      <Clock className="h-4 w-4 me-2" />
+                      {selectedTime || t.selectTime}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[160px] p-2" align="start">
+                    <div className="space-y-1">
+                      {COMMON_HOURS.map((timeOption) => (
+                        <Button
+                          key={timeOption.label}
+                          variant={selectedTime === timeOption.label ? 'default' : 'ghost'}
+                          size="sm"
+                          className="w-full justify-start"
+                          onClick={() => handleCommonHourSelect(timeOption.hour, timeOption.minute)}
+                        >
+                          {timeOption.label}
+                        </Button>
+                      ))}
+                    </div>
+                    <div className="border-t mt-2 pt-2">
+                      <Input
+                        type="time"
+                        value={selectedTime}
+                        onChange={(e) => {
+                          setSelectedTime(e.target.value);
+                          setIsTimePopoverOpen(false);
+                        }}
+                        className="input-noc"
+                      />
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* Display selected ignore until time */}
               {ignoreUntil && (
                 <p className="text-sm text-muted-foreground">
                   {t.expires} {format(ignoreUntil, 'PPpp', { locale: isHebrew ? he : undefined })}

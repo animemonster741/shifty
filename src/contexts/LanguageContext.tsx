@@ -268,6 +268,8 @@ export const translations: Translations = {
   'editor.addColumnAfter': { en: 'Add Column After', he: 'הוסף עמודה אחרי' },
   'editor.deleteColumn': { en: 'Delete Column', he: 'מחק עמודה' },
   'editor.deleteTable': { en: 'Delete Table', he: 'מחק טבלה' },
+  'editor.toggleHeaderRow': { en: 'Header Row', he: 'שורת כותרת' },
+  'editor.cellColor': { en: 'Cell Color', he: 'צבע תא' },
 };
 
 interface LanguageContextType {

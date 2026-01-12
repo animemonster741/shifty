@@ -105,15 +105,7 @@ export function MessageDetailModal({ message, open, onOpenChange, onPin }: Messa
         <div className="space-y-6">
           {/* Content */}
           <div 
-            className={cn(
-              "prose prose-sm dark:prose-invert max-w-none",
-              "[&_table]:border-collapse [&_table]:w-full [&_table]:my-2",
-              "[&_td]:border [&_td]:border-border [&_td]:p-2",
-              "[&_th]:border [&_th]:border-border [&_th]:p-2 [&_th]:bg-muted/50 [&_th]:font-semibold",
-              "[&_ul]:list-disc [&_ul]:ps-5",
-              "[&_ol]:list-decimal [&_ol]:ps-5",
-              "[&_p]:my-1"
-            )}
+            className="prose prose-sm dark:prose-invert max-w-none message-content"
             dangerouslySetInnerHTML={{ __html: message.content }}
           />
 

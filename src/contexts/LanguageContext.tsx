@@ -198,6 +198,19 @@ export const translations: Translations = {
   'messages.readMore': { en: 'Read More', he: 'קריאה נוספת' },
   'messages.pin': { en: 'Pin', he: 'נעיצה' },
   'messages.unpin': { en: 'Unpin', he: 'ביטול נעיצה' },
+  'messages.title': { en: 'Title', he: 'כותרת' },
+  'messages.content': { en: 'Message', he: 'הודעה' },
+  'messages.titlePlaceholder': { en: 'Message title...', he: 'כותרת ההודעה...' },
+  'messages.contentPlaceholder': { en: 'Write your message here...', he: 'כתוב את ההודעה כאן...' },
+  'messages.attachment': { en: 'Attachment', he: 'קובץ מצורף' },
+  'messages.attachmentLimits': { en: 'Images: max 10MB | Documents: max 25MB', he: 'תמונות: עד 10MB | מסמכים: עד 25MB' },
+  'messages.fillRequired': { en: 'Please fill in title and message content', he: 'נא למלא כותרת ותוכן הודעה' },
+  'messages.posted': { en: 'Message posted successfully', he: 'ההודעה פורסמה בהצלחה' },
+  'messages.post': { en: 'Post Message', he: 'פרסום הודעה' },
+  'messages.postForTeam': { en: 'Post an important message for the team', he: 'פרסם הודעה חשובה לצוות' },
+  'messages.preview': { en: 'Preview', he: 'תצוגה מקדימה' },
+  'messages.edit': { en: 'Edit', he: 'עריכה' },
+  'common.optional': { en: 'Optional', he: 'אופציונלי' },
 
   // Archive
   'archive.noAlerts': { en: 'No archived alerts found matching your filters', he: 'לא נמצאו התראות בארכיון התואמות את הסינון' },
@@ -234,6 +247,27 @@ export const translations: Translations = {
   'stats.vsLastWeek': { en: 'vs last week', he: 'מול שבוע שעבר' },
   'stats.topRecurring': { en: 'Top Recurring Alerts', he: 'התראות חוזרות מובילות' },
   'stats.ignores': { en: 'ignores', he: 'השהיות' },
+
+  // Rich Text Editor
+  'editor.bold': { en: 'Bold', he: 'מודגש' },
+  'editor.italic': { en: 'Italic', he: 'נטוי' },
+  'editor.underline': { en: 'Underline', he: 'קו תחתון' },
+  'editor.strikethrough': { en: 'Strikethrough', he: 'קו חוצה' },
+  'editor.alignLeft': { en: 'Align Left', he: 'יישור לשמאל' },
+  'editor.alignCenter': { en: 'Align Center', he: 'יישור למרכז' },
+  'editor.alignRight': { en: 'Align Right', he: 'יישור לימין' },
+  'editor.bulletList': { en: 'Bullet List', he: 'רשימת תבליטים' },
+  'editor.numberedList': { en: 'Numbered List', he: 'רשימה ממוספרת' },
+  'editor.insertTable': { en: 'Insert Table', he: 'הוספת טבלה' },
+  'editor.textColor': { en: 'Text Color', he: 'צבע גופן' },
+  'editor.highlight': { en: 'Highlight', he: 'הדגשת רקע' },
+  'editor.addRowBefore': { en: 'Add Row Before', he: 'הוסף שורה מעל' },
+  'editor.addRowAfter': { en: 'Add Row After', he: 'הוסף שורה מתחת' },
+  'editor.deleteRow': { en: 'Delete Row', he: 'מחק שורה' },
+  'editor.addColumnBefore': { en: 'Add Column Before', he: 'הוסף עמודה לפני' },
+  'editor.addColumnAfter': { en: 'Add Column After', he: 'הוסף עמודה אחרי' },
+  'editor.deleteColumn': { en: 'Delete Column', he: 'מחק עמודה' },
+  'editor.deleteTable': { en: 'Delete Table', he: 'מחק טבלה' },
 };
 
 interface LanguageContextType {

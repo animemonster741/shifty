@@ -74,13 +74,7 @@ export function MessageCard({ message, onViewDetails }: MessageCardProps) {
       <CardContent>
         <div 
           className={cn(
-            "prose prose-sm dark:prose-invert max-w-none text-muted-foreground",
-            "[&_table]:border-collapse [&_table]:w-full [&_table]:my-2",
-            "[&_td]:border [&_td]:border-border [&_td]:p-2",
-            "[&_th]:border [&_th]:border-border [&_th]:p-2 [&_th]:bg-muted/50 [&_th]:font-semibold",
-            "[&_ul]:list-disc [&_ul]:ps-5",
-            "[&_ol]:list-decimal [&_ol]:ps-5",
-            "[&_p]:my-1",
+            "prose prose-sm dark:prose-invert max-w-none text-muted-foreground message-content",
             !isExpanded && "line-clamp-4"
           )}
           dangerouslySetInnerHTML={{ __html: isExpanded ? message.content : previewContent }}

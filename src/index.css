@@ -210,6 +210,54 @@
     animation: pulse-row 2s ease-in-out infinite;
   }
 
+  /* Tiptap Editor Styles */
+  .ProseMirror {
+    @apply outline-none;
+  }
+
+  .ProseMirror p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    @apply text-muted-foreground float-left h-0 pointer-events-none;
+  }
+
+  .ProseMirror table {
+    @apply border-collapse w-full my-2;
+  }
+
+  .ProseMirror td,
+  .ProseMirror th {
+    @apply border border-border p-2 relative;
+    min-width: 1em;
+    vertical-align: top;
+    box-sizing: border-box;
+  }
+
+  .ProseMirror th {
+    @apply bg-muted/50 font-semibold;
+  }
+
+  .ProseMirror .selectedCell:after {
+    @apply absolute inset-0 bg-primary/20 pointer-events-none;
+    content: '';
+    z-index: 2;
+  }
+
+  .ProseMirror ul {
+    @apply list-disc ps-5 my-2;
+  }
+
+  .ProseMirror ol {
+    @apply list-decimal ps-5 my-2;
+  }
+
+  .ProseMirror p {
+    @apply my-1;
+  }
+
+  .ProseMirror:focus {
+    @apply outline-none;
+  }
+
   .input-noc {
     @apply bg-background/50 border-border focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all duration-200;
   }

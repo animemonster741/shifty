@@ -270,6 +270,12 @@ export const translations: Translations = {
   'editor.deleteTable': { en: 'Delete Table', he: 'מחק טבלה' },
   'editor.toggleHeaderRow': { en: 'Header Row', he: 'שורת כותרת' },
   'editor.cellColor': { en: 'Cell Color', he: 'צבע תא' },
+
+  // Global Search
+  'search.globalPlaceholder': { en: 'Search alerts, messages or systems...', he: 'חיפוש התראות, הודעות או מערכות...' },
+  'search.noResults': { en: 'No results found', he: 'לא נמצאו תוצאות' },
+  'search.noResultsDesc': { en: 'Try adjusting your search terms', he: 'נסה לשנות את מילות החיפוש' },
+  'search.resultsInTab': { en: '{count} results', he: '{count} תוצאות' },
 };
 
 interface LanguageContextType {

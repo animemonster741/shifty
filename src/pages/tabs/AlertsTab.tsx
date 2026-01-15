@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useGlobalSearch } from '@/contexts/GlobalSearchContext';
 import { IgnoredAlert, AlertFilters, AlertChangeLog } from '@/types';
 import { AlertsTable } from '@/components/alerts/AlertsTable';
 import { AddAlertModal } from '@/components/alerts/AddAlertModal';
@@ -8,7 +9,6 @@ import { AlertDetailModal } from '@/components/alerts/AlertDetailModal';
 import { EditAlertModal } from '@/components/alerts/EditAlertModal';
 import { FilterPanel } from '@/components/alerts/FilterPanel';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -22,7 +22,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Plus, Search, Clock, AlertTriangle, Check, X } from 'lucide-react';
+import { Plus, Clock, AlertTriangle, Check, X, Search as SearchIcon } from 'lucide-react';
 import { differenceInHours, isAfter, isBefore, startOfDay, endOfDay, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -45,6 +45,7 @@ interface AlertsTabProps {
 export function AlertsTab({ alerts, secondaryAlerts, onAlertsChange, onSecondaryAlertsChange }: AlertsTabProps) {
   const { user } = useAuth();
   const { t, direction } = useLanguage();
+  const { globalSearchQuery, filterAlerts, setAlertCount } = useGlobalSearch();
   const [filters, setFilters] = useState<AlertFilters>(defaultFilters);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSecondaryAddModalOpen, setIsSecondaryAddModalOpen] = useState(false);
@@ -111,9 +112,19 @@ export function AlertsTab({ alerts, secondaryAlerts, onAlertsChange, onSecondary
     });
   };
 
-  // Apply filters to both tables
-  const filteredAlerts = useMemo(() => applyFilters(activeAlerts), [activeAlerts, filters]);
-  const filteredSecondaryAlerts = useMemo(() => applyFilters(activeSecondaryAlerts), [activeSecondaryAlerts, filters]);
+  // Apply global search first, then local filters
+  const globallyFilteredAlerts = useMemo(() => filterAlerts(activeAlerts), [activeAlerts, filterAlerts]);
+  const globallyFilteredSecondaryAlerts = useMemo(() => filterAlerts(activeSecondaryAlerts), [activeSecondaryAlerts, filterAlerts]);
+
+  // Apply local filters to both tables
+  const filteredAlerts = useMemo(() => applyFilters(globallyFilteredAlerts), [globallyFilteredAlerts, filters]);
+  const filteredSecondaryAlerts = useMemo(() => applyFilters(globallyFilteredSecondaryAlerts), [globallyFilteredSecondaryAlerts, filters]);
+
+  // Update result counts for cross-tab notification
+  useEffect(() => {
+    const totalGloballyFiltered = globallyFilteredAlerts.length + globallyFilteredSecondaryAlerts.length;
+    setAlertCount(totalGloballyFiltered);
+  }, [globallyFilteredAlerts.length, globallyFilteredSecondaryAlerts.length, setAlertCount]);
 
   const handleAddAlert = (data: any) => {
     const newAlert: IgnoredAlert = {
@@ -373,63 +384,71 @@ export function AlertsTab({ alerts, secondaryAlerts, onAlertsChange, onSecondary
 
       {/* Actions bar */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            value={filters.searchQuery}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            placeholder={t('filter.searchPlaceholder')}
-            className="ps-9 input-noc"
-          />
-        </div>
         <div className="flex gap-2 items-center">
           <FilterPanel 
             filters={filters} 
             onFiltersChange={setFilters}
             showStatusFilter={false}
           />
-          <Button onClick={() => setIsAddModalOpen(true)}>
-            <Plus className="h-4 w-4 me-2" />
-            {t('alerts.addAlert')}
-          </Button>
         </div>
+        <Button onClick={() => setIsAddModalOpen(true)}>
+          <Plus className="h-4 w-4 me-2" />
+          {t('alerts.addAlert')}
+        </Button>
       </div>
 
       {/* Results info */}
-      {hasActiveFilters && filters.status !== 'pending' && (
+      {(hasActiveFilters || globalSearchQuery) && filters.status !== 'pending' && (
         <div className="text-sm text-muted-foreground">
           {t('common.showing')} {filteredAlerts.length + filteredSecondaryAlerts.length} {t('common.of')} {totalActiveAlerts} {t('alerts.activeAlerts').toLowerCase()}
         </div>
       )}
 
+      {/* No results state */}
+      {globalSearchQuery && filteredAlerts.length === 0 && filteredSecondaryAlerts.length === 0 && (
+        <div className="text-center py-12">
+          <SearchIcon className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+          <div className="text-muted-foreground space-y-2">
+            <p className="font-medium">{t('search.noResults')}</p>
+            <p className="text-sm">{t('search.noResultsDesc')}</p>
+          </div>
+        </div>
+      )}
+
       {/* Primary Table */}
-      <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-foreground">{t('tabs.alerts')}</h2>
-        <AlertsTable
-          alerts={filteredAlerts}
-          onViewAlert={(alert) => handleViewAlert(alert, 'primary')}
-          onDeleteAlert={(alertId) => handleDeleteAlert(alertId, 'primary')}
-        />
-      </div>
+      {(filteredAlerts.length > 0 || !globalSearchQuery) && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold text-foreground">{t('tabs.alerts')}</h2>
+          <AlertsTable
+            alerts={filteredAlerts}
+            onViewAlert={(alert) => handleViewAlert(alert, 'primary')}
+            onDeleteAlert={(alertId) => handleDeleteAlert(alertId, 'primary')}
+          />
+        </div>
+      )}
 
       {/* Separator */}
-      <Separator className="my-8" />
+      {(filteredAlerts.length > 0 || filteredSecondaryAlerts.length > 0 || !globalSearchQuery) && (
+        <Separator className="my-8" />
+      )}
 
       {/* Secondary Table Section */}
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-          <h2 className="text-lg font-semibold text-foreground">{t('alerts.additionalAlerts')}</h2>
-          <Button onClick={() => setIsSecondaryAddModalOpen(true)}>
-            <Plus className="h-4 w-4 me-2" />
-            {t('alerts.addNewAlert')}
-          </Button>
+      {(filteredSecondaryAlerts.length > 0 || !globalSearchQuery) && (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground">{t('alerts.additionalAlerts')}</h2>
+            <Button onClick={() => setIsSecondaryAddModalOpen(true)}>
+              <Plus className="h-4 w-4 me-2" />
+              {t('alerts.addNewAlert')}
+            </Button>
+          </div>
+          <AlertsTable
+            alerts={filteredSecondaryAlerts}
+            onViewAlert={(alert) => handleViewAlert(alert, 'secondary')}
+            onDeleteAlert={(alertId) => handleDeleteAlert(alertId, 'secondary')}
+          />
         </div>
-        <AlertsTable
-          alerts={filteredSecondaryAlerts}
-          onViewAlert={(alert) => handleViewAlert(alert, 'secondary')}
-          onDeleteAlert={(alertId) => handleDeleteAlert(alertId, 'secondary')}
-        />
-      </div>
+      )}
 
       {/* Modals */}
       <AddAlertModal

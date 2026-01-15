@@ -1,35 +1,35 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { useGlobalSearch } from '@/contexts/GlobalSearchContext';
 import { ImportantMessage } from '@/types';
 import { mockMessages } from '@/data/mockData';
 import { MessageCard } from '@/components/messages/MessageCard';
 import { AddMessageModal } from '@/components/messages/AddMessageModal';
 import { MessageDetailModal } from '@/components/messages/MessageDetailModal';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Plus, Search, Pin } from 'lucide-react';
+import { Plus, Pin } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function MessagesTab() {
   const { user } = useAuth();
+  const { t, direction } = useLanguage();
+  const { filterMessages, setMessageCount, globalSearchQuery } = useGlobalSearch();
   const [messages, setMessages] = useState<ImportantMessage[]>(mockMessages);
-  const [searchQuery, setSearchQuery] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<ImportantMessage | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
-  const pinnedMessages = messages.filter(m => m.pinned);
-  const unpinnedMessages = messages.filter(m => !m.pinned);
+  // Apply global search filter
+  const filteredMessages = useMemo(() => filterMessages(messages), [messages, filterMessages]);
+  
+  const pinnedMessages = filteredMessages.filter(m => m.pinned);
+  const unpinnedMessages = filteredMessages.filter(m => !m.pinned);
 
-  const filteredPinned = pinnedMessages.filter(msg =>
-    msg.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    msg.content.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const filteredUnpinned = unpinnedMessages.filter(msg =>
-    msg.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    msg.content.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Update result counts for cross-tab notification
+  useEffect(() => {
+    setMessageCount(filteredMessages.length);
+  }, [filteredMessages.length, setMessageCount]);
 
   const handleAddMessage = (data: any) => {
     const newMessage: ImportantMessage = {
@@ -71,33 +71,24 @@ export function MessagesTab() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in" dir={direction}>
       {/* Actions bar */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search messages..."
-            className="pl-9 input-noc"
-          />
-        </div>
+      <div className="flex justify-end">
         <Button onClick={() => setIsAddModalOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Message
+          <Plus className="h-4 w-4 me-2" />
+          {t('messages.newMessage')}
         </Button>
       </div>
 
       {/* Pinned messages section */}
-      {filteredPinned.length > 0 && (
+      {pinnedMessages.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <Pin className="h-4 w-4" />
-            Pinned Messages
+            {t('messages.pinnedMessages')}
           </div>
           <div className="grid gap-4">
-            {filteredPinned.map((message) => (
+            {pinnedMessages.map((message) => (
               <MessageCard
                 key={message.id}
                 message={message}
@@ -109,15 +100,15 @@ export function MessagesTab() {
       )}
 
       {/* Regular messages */}
-      {filteredUnpinned.length > 0 && (
+      {unpinnedMessages.length > 0 && (
         <div className="space-y-4">
-          {filteredPinned.length > 0 && (
+          {pinnedMessages.length > 0 && (
             <div className="text-sm font-medium text-muted-foreground">
-              All Messages
+              {t('messages.allMessages')}
             </div>
           )}
           <div className="grid gap-4">
-            {filteredUnpinned.map((message) => (
+            {unpinnedMessages.map((message) => (
               <MessageCard
                 key={message.id}
                 message={message}
@@ -128,9 +119,14 @@ export function MessagesTab() {
         </div>
       )}
 
-      {filteredPinned.length === 0 && filteredUnpinned.length === 0 && (
-        <div className="text-center py-12 text-muted-foreground">
-          <p>No messages found</p>
+      {pinnedMessages.length === 0 && unpinnedMessages.length === 0 && (
+        <div className="text-center py-12">
+          <div className="text-muted-foreground space-y-2">
+            <p className="font-medium">{t('search.noResults')}</p>
+            {globalSearchQuery && (
+              <p className="text-sm">{t('search.noResultsDesc')}</p>
+            )}
+          </div>
         </div>
       )}
 

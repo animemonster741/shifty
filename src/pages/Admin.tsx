@@ -13,9 +13,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ArrowLeft, Users, Building2, Loader2, Plus, Shield, User as UserIcon, Pencil, Eye, EyeOff, Key, Check, X } from 'lucide-react';
+import { ArrowLeft, Users, Building2, Loader2, Plus, Shield, User as UserIcon, Pencil, Eye, EyeOff, Key, Check, X, Link as LinkIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { LinksManagement } from '@/components/admin/LinksManagement';
 
 interface UserWithRole {
   id: string;
@@ -383,6 +384,10 @@ export function AdminPage() {
               <Building2 className="h-4 w-4" />
               {t('admin.teamManagement')}
             </TabsTrigger>
+            <TabsTrigger value="links" className="gap-2">
+              <LinkIcon className="h-4 w-4" />
+              {t('links.manageLinks')}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="users" className="space-y-6">
@@ -722,6 +727,10 @@ export function AdminPage() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="links" className="space-y-6">
+            <LinksManagement />
           </TabsContent>
         </Tabs>
 

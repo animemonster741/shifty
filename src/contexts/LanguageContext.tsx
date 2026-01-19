@@ -126,6 +126,7 @@ export const translations: Translations = {
   // Tabs / Navigation
   'tabs.alerts': { en: 'Paused Alerts', he: 'התראות מושהות' },
   'tabs.messages': { en: 'Important Messages', he: 'הודעות חשובות' },
+  'tabs.links': { en: 'Useful Links', he: 'קישורים שימושיים' },
   'tabs.statistics': { en: 'Statistics', he: 'סטטיסטיקות' },
   'tabs.archive': { en: 'Archive', he: 'ארכיון' },
   'tabs.logs': { en: 'Activity Log', he: 'יומן פעילות' },
@@ -276,6 +277,32 @@ export const translations: Translations = {
   'search.noResults': { en: 'No results found', he: 'לא נמצאו תוצאות' },
   'search.noResultsDesc': { en: 'Try adjusting your search terms', he: 'נסה לשנות את מילות החיפוש' },
   'search.resultsInTab': { en: '{count} results', he: '{count} תוצאות' },
+
+  // Useful Links
+  'links.usefulLinks': { en: 'Useful Links', he: 'קישורים שימושיים' },
+  'links.noLinks': { en: 'No links added yet', he: 'עדיין לא נוספו קישורים' },
+  'links.noLinksDesc': { en: 'Admins can add useful links from the Admin panel', he: 'מנהלים יכולים להוסיף קישורים מפאנל הניהול' },
+  'links.uncategorized': { en: 'General', he: 'כללי' },
+  'links.addNewLink': { en: 'Add New Link', he: 'הוספת קישור חדש' },
+  'links.addLinkDesc': { en: 'Add a useful link for the team', he: 'הוסף קישור שימושי לצוות' },
+  'links.linkName': { en: 'Link Name', he: 'שם הקישור' },
+  'links.url': { en: 'URL', he: 'כתובת URL' },
+  'links.icon': { en: 'Icon', he: 'אייקון' },
+  'links.imageUrl': { en: 'Image URL', he: 'כתובת תמונה' },
+  'links.category': { en: 'Category', he: 'קטגוריה' },
+  'links.description': { en: 'Description', he: 'תיאור' },
+  'links.descriptionPlaceholder': { en: 'Short description...', he: 'תיאור קצר...' },
+  'links.addLink': { en: 'Add Link', he: 'הוספת קישור' },
+  'links.allLinks': { en: 'All Links', he: 'כל הקישורים' },
+  'links.manageLinksDesc': { en: 'Edit or delete existing links', he: 'עריכה או מחיקה של קישורים קיימים' },
+  'links.editLink': { en: 'Edit Link', he: 'עריכת קישור' },
+  'links.editLinkDesc': { en: 'Update the link details', he: 'עדכון פרטי הקישור' },
+  'links.deleteLink': { en: 'Delete Link', he: 'מחיקת קישור' },
+  'links.deleteLinkConfirm': { en: 'Are you sure you want to delete "{name}"?', he: 'האם למחוק את "{name}"?' },
+  'links.linkAdded': { en: 'Link added successfully', he: 'הקישור נוסף בהצלחה' },
+  'links.linkUpdated': { en: 'Link updated successfully', he: 'הקישור עודכן בהצלחה' },
+  'links.linkDeleted': { en: 'Link deleted successfully', he: 'הקישור נמחק בהצלחה' },
+  'links.manageLinks': { en: 'Manage Links', he: 'ניהול קישורים' },
 };
 
 interface LanguageContextType {

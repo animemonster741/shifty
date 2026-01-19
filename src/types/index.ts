@@ -70,6 +70,7 @@ export interface TabNotification {
   statistics: boolean;
   archive: boolean;
   logs: boolean;
+  links: boolean;
 }
 
 export interface AlertFilters {

@@ -6,6 +6,7 @@ import { MessagesTab } from '@/pages/tabs/MessagesTab';
 import { StatisticsTab } from '@/pages/tabs/StatisticsTab';
 import { ArchiveTab } from '@/pages/tabs/ArchiveTab';
 import { LogsTab } from '@/pages/tabs/LogsTab';
+import { LinksTab } from '@/pages/tabs/LinksTab';
 import { TabNotification, AlertChangeLog, IgnoredAlert } from '@/types';
 import { mockAlerts, mockSecondaryAlerts } from '@/data/mockData';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -19,6 +20,7 @@ export function Dashboard() {
     statistics: false,
     archive: false,
     logs: false,
+    links: false,
   });
   const [alerts, setAlerts] = useState<IgnoredAlert[]>(mockAlerts);
   const [secondaryAlerts, setSecondaryAlerts] = useState<IgnoredAlert[]>(mockSecondaryAlerts);
@@ -92,6 +94,7 @@ export function Dashboard() {
           />
         )}
         {activeTab === 'messages' && <MessagesTab />}
+        {activeTab === 'links' && <LinksTab />}
         {activeTab === 'statistics' && <StatisticsTab />}
         {activeTab === 'archive' && <ArchiveTab alerts={allAlerts} onAlertsChange={handleAlertsChange} />}
         {activeTab === 'logs' && <LogsTab logs={allLogs} />}

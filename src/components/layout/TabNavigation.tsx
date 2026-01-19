@@ -1,10 +1,10 @@
 import { cn } from '@/lib/utils';
-import { AlertTriangle, MessageSquare, BarChart3, Archive, History } from 'lucide-react';
+import { AlertTriangle, MessageSquare, BarChart3, Archive, History, ExternalLink } from 'lucide-react';
 import { TabNotification } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useGlobalSearch } from '@/contexts/GlobalSearchContext';
 
-type TabId = 'alerts' | 'messages' | 'statistics' | 'archive' | 'logs';
+type TabId = 'alerts' | 'messages' | 'statistics' | 'archive' | 'logs' | 'links';
 
 interface Tab {
   id: TabId;
@@ -15,6 +15,7 @@ interface Tab {
 const tabs: Tab[] = [
   { id: 'alerts', labelKey: 'tabs.alerts', icon: <AlertTriangle className="h-4 w-4" /> },
   { id: 'messages', labelKey: 'tabs.messages', icon: <MessageSquare className="h-4 w-4" /> },
+  { id: 'links', labelKey: 'tabs.links', icon: <ExternalLink className="h-4 w-4" /> },
   { id: 'statistics', labelKey: 'tabs.statistics', icon: <BarChart3 className="h-4 w-4" /> },
   { id: 'archive', labelKey: 'tabs.archive', icon: <Archive className="h-4 w-4" /> },
   { id: 'logs', labelKey: 'tabs.logs', icon: <History className="h-4 w-4" /> },

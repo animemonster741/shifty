@@ -13,10 +13,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ArrowLeft, Users, Building2, Loader2, Plus, Shield, User as UserIcon, Pencil, Eye, EyeOff, Key, Check, X, Link as LinkIcon } from 'lucide-react';
+import { ArrowLeft, Users, Building2, Loader2, Plus, Shield, User as UserIcon, Pencil, Eye, EyeOff, Key, Check, X, Link as LinkIcon, LayoutDashboard } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { LinksManagement } from '@/components/admin/LinksManagement';
+import { NavigationManagement } from '@/components/admin/NavigationManagement';
 
 interface UserWithRole {
   id: string;
@@ -375,7 +376,7 @@ export function AdminPage() {
         </div>
 
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList>
+          <TabsList className="flex-wrap h-auto gap-1">
             <TabsTrigger value="users" className="gap-2">
               <Users className="h-4 w-4" />
               {t('admin.userManagement')}
@@ -387,6 +388,10 @@ export function AdminPage() {
             <TabsTrigger value="links" className="gap-2">
               <LinkIcon className="h-4 w-4" />
               {t('links.manageLinks')}
+            </TabsTrigger>
+            <TabsTrigger value="navigation" className="gap-2">
+              <LayoutDashboard className="h-4 w-4" />
+              {t('nav.menuAndPages')}
             </TabsTrigger>
           </TabsList>
 
@@ -731,6 +736,10 @@ export function AdminPage() {
 
           <TabsContent value="links" className="space-y-6">
             <LinksManagement />
+          </TabsContent>
+
+          <TabsContent value="navigation" className="space-y-6">
+            <NavigationManagement />
           </TabsContent>
         </Tabs>
 

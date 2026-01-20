@@ -1,25 +1,17 @@
 import { cn } from '@/lib/utils';
 import { AlertTriangle, MessageSquare, BarChart3, Archive, History, ExternalLink } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 import { TabNotification } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useGlobalSearch } from '@/contexts/GlobalSearchContext';
+import { useNavigation, NavigationTab } from '@/contexts/NavigationContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { Loader2 } from 'lucide-react';
 
-type TabId = 'alerts' | 'messages' | 'statistics' | 'archive' | 'logs' | 'links';
+// System tab keys for built-in functionality
+const SYSTEM_TAB_KEYS = ['alerts', 'messages', 'statistics', 'archive', 'logs', 'links'];
 
-interface Tab {
-  id: TabId;
-  labelKey: string;
-  icon: React.ReactNode;
-}
-
-const tabs: Tab[] = [
-  { id: 'alerts', labelKey: 'tabs.alerts', icon: <AlertTriangle className="h-4 w-4" /> },
-  { id: 'messages', labelKey: 'tabs.messages', icon: <MessageSquare className="h-4 w-4" /> },
-  { id: 'links', labelKey: 'tabs.links', icon: <ExternalLink className="h-4 w-4" /> },
-  { id: 'statistics', labelKey: 'tabs.statistics', icon: <BarChart3 className="h-4 w-4" /> },
-  { id: 'archive', labelKey: 'tabs.archive', icon: <Archive className="h-4 w-4" /> },
-  { id: 'logs', labelKey: 'tabs.logs', icon: <History className="h-4 w-4" /> },
-];
+export type TabId = string;
 
 interface TabNavigationProps {
   activeTab: TabId;
@@ -28,30 +20,52 @@ interface TabNavigationProps {
 }
 
 export function TabNavigation({ activeTab, onTabChange, notifications }: TabNavigationProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { globalSearchQuery, resultCounts } = useGlobalSearch();
+  const { tabs, isLoading, getVisibleTabs } = useNavigation();
+  const { isAdmin } = useAuth();
 
-  const getSearchResultCount = (tabId: TabId): number => {
+  const getSearchResultCount = (tabKey: string): number => {
     if (!globalSearchQuery.trim()) return 0;
-    if (tabId === 'alerts') return resultCounts.alerts;
-    if (tabId === 'messages') return resultCounts.messages;
+    if (tabKey === 'alerts') return resultCounts.alerts;
+    if (tabKey === 'messages') return resultCounts.messages;
     return 0;
   };
+
+  // Get icon component dynamically
+  const getIconComponent = (iconName: string) => {
+    const Icon = (LucideIcons as any)[iconName];
+    return Icon ? <Icon className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />;
+  };
+
+  const visibleTabs = getVisibleTabs(isAdmin);
+
+  if (isLoading) {
+    return (
+      <nav className="border-b border-border">
+        <div className="container px-4">
+          <div className="flex items-center justify-center py-3">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
+        </div>
+      </nav>
+    );
+  }
 
   return (
     <nav className="border-b border-border">
       <div className="container px-4">
         <div className="flex gap-1 overflow-x-auto scrollbar-thin">
-          {tabs.map((tab) => {
-            const hasNotification = notifications[tab.id];
-            const isActive = activeTab === tab.id;
-            const searchResultCount = getSearchResultCount(tab.id);
+          {visibleTabs.map((tab) => {
+            const hasNotification = (notifications as any)[tab.tab_key] || false;
+            const isActive = activeTab === tab.tab_key;
+            const searchResultCount = getSearchResultCount(tab.tab_key);
             const hasSearchResults = !isActive && globalSearchQuery.trim() && searchResultCount > 0;
 
             return (
               <button
                 key={tab.id}
-                onClick={() => onTabChange(tab.id)}
+                onClick={() => onTabChange(tab.tab_key)}
                 className={cn(
                   'tab-glow relative flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all duration-200',
                   'hover:text-foreground',
@@ -62,8 +76,10 @@ export function TabNavigation({ activeTab, onTabChange, notifications }: TabNavi
                   (hasNotification || hasSearchResults) && !isActive && 'has-notification'
                 )}
               >
-                {tab.icon}
-                <span className="hidden sm:inline">{t(tab.labelKey)}</span>
+                {getIconComponent(tab.icon)}
+                <span className="hidden sm:inline">
+                  {language === 'he' ? tab.label_he : tab.label_en}
+                </span>
                 {hasSearchResults && (
                   <span className="flex items-center justify-center min-w-5 h-5 px-1.5 text-xs font-medium rounded-full bg-primary text-primary-foreground">
                     {searchResultCount > 99 ? '99+' : searchResultCount}
@@ -80,5 +96,3 @@ export function TabNavigation({ activeTab, onTabChange, notifications }: TabNavi
     </nav>
   );
 }
-
-export type { TabId };

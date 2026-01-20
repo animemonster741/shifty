@@ -44,6 +44,83 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_pages: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string | null
+          id: string
+          tab_id: string
+          updated_at: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          tab_id: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          tab_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_pages_tab_id_fkey"
+            columns: ["tab_id"]
+            isOneToOne: false
+            referencedRelation: "navigation_tabs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      navigation_tabs: {
+        Row: {
+          created_at: string
+          display_order: number
+          icon: string
+          id: string
+          is_custom_page: boolean
+          is_system: boolean
+          is_visible: boolean
+          label_en: string
+          label_he: string
+          tab_key: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          icon?: string
+          id?: string
+          is_custom_page?: boolean
+          is_system?: boolean
+          is_visible?: boolean
+          label_en: string
+          label_he: string
+          tab_key: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          icon?: string
+          id?: string
+          is_custom_page?: boolean
+          is_system?: boolean
+          is_visible?: boolean
+          label_en?: string
+          label_he?: string
+          tab_key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

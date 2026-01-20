@@ -374,3 +374,45 @@
     background-color: hsl(var(--destructive) / 0.1);
   }
 }
+
+/* Custom Page Content Styles */
+.custom-page-content {
+  color: hsl(var(--foreground));
+  line-height: 1.7;
+}
+
+.custom-page-content h1, .custom-page-content h2, .custom-page-content h3 {
+  color: hsl(var(--foreground));
+  font-weight: 600;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+}
+
+.custom-page-content p {
+  margin-bottom: 1em;
+}
+
+.custom-page-content ul, .custom-page-content ol {
+  padding-inline-start: 1.5em;
+  margin-bottom: 1em;
+}
+
+.custom-page-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+}
+
+.custom-page-content th, .custom-page-content td {
+  border: 1px solid hsl(var(--border));
+  padding: 0.75rem;
+}
+
+.custom-page-content th {
+  background: hsl(var(--muted));
+}
+
+.custom-page-content a {
+  color: hsl(var(--primary));
+  text-decoration: underline;
+}

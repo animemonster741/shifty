@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 
 export interface NavigationTab {
   id: string;
@@ -26,7 +25,6 @@ const NavigationContext = createContext<NavigationContextType | undefined>(undef
 export function NavigationProvider({ children }: { children: ReactNode }) {
   const [tabs, setTabs] = useState<NavigationTab[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { isAdmin } = useAuth();
 
   const fetchTabs = useCallback(async () => {
     try {

@@ -16,6 +16,7 @@ import {
 import { MessageSquare, Paperclip, X, Eye, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { sanitizeHTML } from '@/utils/sanitize';
 
 interface AddMessageModalProps {
   open: boolean;
@@ -138,7 +139,7 @@ export function AddMessageModal({ open, onOpenChange, onSubmit }: AddMessageModa
                   "[&_ol]:list-decimal [&_ol]:ps-5"
                 )}
                 dir={direction}
-                dangerouslySetInnerHTML={{ __html: content }}
+                dangerouslySetInnerHTML={{ __html: sanitizeHTML(content) }}
               />
             ) : (
               <RichTextEditor

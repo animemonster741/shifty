@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Pin, MessageSquare, Clock, User, Paperclip, Eye, ChevronDown, ChevronUp } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { sanitizeHTML } from '@/utils/sanitize';
 
 interface MessageCardProps {
   message: ImportantMessage;
@@ -77,7 +78,7 @@ export function MessageCard({ message, onViewDetails }: MessageCardProps) {
             "prose prose-sm dark:prose-invert max-w-none text-muted-foreground message-content",
             !isExpanded && "line-clamp-4"
           )}
-          dangerouslySetInnerHTML={{ __html: isExpanded ? message.content : previewContent }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHTML(isExpanded ? message.content : previewContent) }}
         />
         {message.content.length > 200 && (
           <Button 

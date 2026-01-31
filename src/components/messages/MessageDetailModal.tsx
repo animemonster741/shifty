@@ -23,6 +23,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { mockComments } from '@/data/mockData';
 import { toast } from 'sonner';
+import { sanitizeHTML } from '@/utils/sanitize';
 
 interface MessageDetailModalProps {
   message: ImportantMessage | null;
@@ -106,7 +107,7 @@ export function MessageDetailModal({ message, open, onOpenChange, onPin }: Messa
           {/* Content */}
           <div 
             className="prose prose-sm dark:prose-invert max-w-none message-content"
-            dangerouslySetInnerHTML={{ __html: message.content }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHTML(message.content) }}
           />
 
           {/* Attachment */}

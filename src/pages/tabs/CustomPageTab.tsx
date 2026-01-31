@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Loader2, FileText } from 'lucide-react';
+import { sanitizeHTML } from '@/utils/sanitize';
 
 interface CustomPageTabProps {
   tabId: string;
@@ -68,7 +69,7 @@ export function CustomPageTab({ tabId }: CustomPageTabProps) {
       <div 
         className="prose prose-invert max-w-none custom-page-content card-elevated p-6 rounded-lg"
         dir={direction}
-        dangerouslySetInnerHTML={{ __html: content }}
+        dangerouslySetInnerHTML={{ __html: sanitizeHTML(content) }}
       />
     </div>
   );

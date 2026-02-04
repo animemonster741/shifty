@@ -16,9 +16,24 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export function Dashboard() {
   const { direction } = useLanguage();
-  const { tabs, getVisibleTabs } = useNavigation();
+  const { tabs, isLoading, getVisibleTabs } = useNavigation();
   const { isAdmin } = useAuth();
-  const [activeTab, setActiveTab] = useState<TabId>('alerts');
+  
+  // Get visible tabs and set initial active tab to the first one in order
+  const visibleTabs = getVisibleTabs(isAdmin);
+  const [activeTab, setActiveTab] = useState<TabId>(() => {
+    return visibleTabs.length > 0 ? visibleTabs[0].tab_key : 'alerts';
+  });
+
+  // Update active tab when tabs load or change, if current tab is not visible
+  useEffect(() => {
+    if (!isLoading && visibleTabs.length > 0) {
+      const isCurrentTabVisible = visibleTabs.some(t => t.tab_key === activeTab);
+      if (!isCurrentTabVisible) {
+        setActiveTab(visibleTabs[0].tab_key);
+      }
+    }
+  }, [visibleTabs, isLoading, activeTab]);
   const [notifications, setNotifications] = useState<TabNotification>({
     alerts: false,
     messages: true,
@@ -82,7 +97,6 @@ export function Dashboard() {
   const allAlerts = [...alerts, ...secondaryAlerts];
 
   // Find the active tab to determine if it's a custom page
-  const visibleTabs = getVisibleTabs(isAdmin);
   const activeTabData = visibleTabs.find(t => t.tab_key === activeTab);
   const isCustomPage = activeTabData?.is_custom_page && activeTabData?.id;
 

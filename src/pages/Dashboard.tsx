@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Header } from '@/components/layout/Header';
 import { TabNavigation, TabId } from '@/components/layout/TabNavigation';
 import { AlertsTab } from '@/pages/tabs/AlertsTab';
@@ -7,6 +7,7 @@ import { StatisticsTab } from '@/pages/tabs/StatisticsTab';
 import { ArchiveTab } from '@/pages/tabs/ArchiveTab';
 import { LogsTab } from '@/pages/tabs/LogsTab';
 import { LinksTab } from '@/pages/tabs/LinksTab';
+import { KnowledgeBaseTab } from '@/pages/tabs/KnowledgeBaseTab';
 import { CustomPageTab } from '@/pages/tabs/CustomPageTab';
 import { TabNotification, AlertChangeLog, IgnoredAlert } from '@/types';
 import { mockAlerts, mockSecondaryAlerts } from '@/data/mockData';
@@ -19,11 +20,15 @@ export function Dashboard() {
   const { tabs, isLoading, getVisibleTabs } = useNavigation();
   const { isAdmin } = useAuth();
   
-  // Get visible tabs and set initial active tab to the first one in order
-  const visibleTabs = getVisibleTabs(isAdmin);
-  const [activeTab, setActiveTab] = useState<TabId>(() => {
+  // Memoize visible tabs to prevent unnecessary re-renders
+  const visibleTabs = useMemo(() => getVisibleTabs(isAdmin), [tabs, isAdmin, getVisibleTabs]);
+  
+  // Get initial tab key from first visible tab
+  const initialTabKey = useMemo(() => {
     return visibleTabs.length > 0 ? visibleTabs[0].tab_key : 'alerts';
-  });
+  }, []);  // Only compute once on mount
+  
+  const [activeTab, setActiveTab] = useState<TabId>(initialTabKey);
 
   // Update active tab when tabs load or change, if current tab is not visible
   useEffect(() => {
@@ -33,7 +38,7 @@ export function Dashboard() {
         setActiveTab(visibleTabs[0].tab_key);
       }
     }
-  }, [visibleTabs, isLoading, activeTab]);
+  }, [tabs, isLoading, isAdmin]);
   const [notifications, setNotifications] = useState<TabNotification>({
     alerts: false,
     messages: true,
@@ -122,6 +127,8 @@ export function Dashboard() {
         return <MessagesTab />;
       case 'links':
         return <LinksTab />;
+      case 'knowledge-base':
+        return <KnowledgeBaseTab />;
       case 'statistics':
         return <StatisticsTab />;
       case 'archive':

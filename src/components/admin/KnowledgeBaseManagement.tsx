@@ -231,7 +231,8 @@ export function KnowledgeBaseManagement() {
     }
   };
 
-  const getDisplayName = (item: KnowledgeBaseItem) => {
+  const getDisplayName = (item: KnowledgeBaseItem | null) => {
+    if (!item) return '';
     return item.title || item.file_name || (language === 'he' ? 'ללא שם' : 'Untitled');
   };
 

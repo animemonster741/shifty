@@ -13,11 +13,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ArrowLeft, Users, Building2, Loader2, Plus, Shield, User as UserIcon, Pencil, Eye, EyeOff, Key, Check, X, Link as LinkIcon, LayoutDashboard } from 'lucide-react';
+import { ArrowLeft, Users, Building2, Loader2, Plus, Shield, User as UserIcon, Pencil, Eye, EyeOff, Key, Check, X, Link as LinkIcon, LayoutDashboard, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { LinksManagement } from '@/components/admin/LinksManagement';
 import { NavigationManagement } from '@/components/admin/NavigationManagement';
+import { KnowledgeBaseManagement } from '@/components/admin/KnowledgeBaseManagement';
 
 interface UserWithRole {
   id: string;
@@ -45,7 +46,7 @@ const addTeamSchema = z.object({
 
 export function AdminPage() {
   const { user, isAdmin, isLoading: authLoading, session } = useAuth();
-  const { t, direction } = useLanguage();
+  const { t, direction, language } = useLanguage();
   const navigate = useNavigate();
   
   const [users, setUsers] = useState<UserWithRole[]>([]);
@@ -388,6 +389,10 @@ export function AdminPage() {
             <TabsTrigger value="links" className="gap-2">
               <LinkIcon className="h-4 w-4" />
               {t('links.manageLinks')}
+            </TabsTrigger>
+            <TabsTrigger value="knowledge-base" className="gap-2">
+              <BookOpen className="h-4 w-4" />
+              {language === 'he' ? 'בסיס ידע' : 'Knowledge Base'}
             </TabsTrigger>
             <TabsTrigger value="navigation" className="gap-2">
               <LayoutDashboard className="h-4 w-4" />
@@ -736,6 +741,10 @@ export function AdminPage() {
 
           <TabsContent value="links" className="space-y-6">
             <LinksManagement />
+          </TabsContent>
+
+          <TabsContent value="knowledge-base" className="space-y-6">
+            <KnowledgeBaseManagement />
           </TabsContent>
 
           <TabsContent value="navigation" className="space-y-6">

@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      access_approvers: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action_type: string
@@ -216,6 +237,80 @@ export type Database = {
           new_role?: Database["public"]["Enums"]["app_role"]
           old_role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      room_access_entries: {
+        Row: {
+          approver_id: string | null
+          authorized_personnel: string[]
+          created_at: string
+          created_by: string | null
+          end_date: string
+          id: string
+          notes: string | null
+          reason: string
+          room_ids: string[]
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          approver_id?: string | null
+          authorized_personnel?: string[]
+          created_at?: string
+          created_by?: string | null
+          end_date: string
+          id?: string
+          notes?: string | null
+          reason: string
+          room_ids?: string[]
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          approver_id?: string | null
+          authorized_personnel?: string[]
+          created_at?: string
+          created_by?: string | null
+          end_date?: string
+          id?: string
+          notes?: string | null
+          reason?: string
+          room_ids?: string[]
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_access_entries_approver_id_fkey"
+            columns: ["approver_id"]
+            isOneToOne: false
+            referencedRelation: "access_approvers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rooms: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          display_order: number
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          display_order?: number
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          display_order?: number
+          id?: string
+          name?: string
         }
         Relationships: []
       }

@@ -8,6 +8,7 @@ import { ArchiveTab } from '@/pages/tabs/ArchiveTab';
 import { LogsTab } from '@/pages/tabs/LogsTab';
 import { LinksTab } from '@/pages/tabs/LinksTab';
 import { KnowledgeBaseTab } from '@/pages/tabs/KnowledgeBaseTab';
+import { RoomAccessTab } from '@/pages/tabs/RoomAccessTab';
 import { CustomPageTab } from '@/pages/tabs/CustomPageTab';
 import { TabNotification, AlertChangeLog, IgnoredAlert } from '@/types';
 import { mockAlerts, mockSecondaryAlerts } from '@/data/mockData';
@@ -129,6 +130,8 @@ export function Dashboard() {
         return <LinksTab />;
       case 'knowledge-base':
         return <KnowledgeBaseTab />;
+      case 'room-access':
+        return <RoomAccessTab />;
       case 'statistics':
         return <StatisticsTab />;
       case 'archive':

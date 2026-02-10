@@ -13,12 +13,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ArrowLeft, Users, Building2, Loader2, Plus, Shield, User as UserIcon, Pencil, Eye, EyeOff, Key, Check, X, Link as LinkIcon, LayoutDashboard, BookOpen } from 'lucide-react';
+import { ArrowLeft, Users, Building2, Loader2, Plus, Shield, User as UserIcon, Pencil, Eye, EyeOff, Key, Check, X, Link as LinkIcon, LayoutDashboard, BookOpen, KeyRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { LinksManagement } from '@/components/admin/LinksManagement';
 import { NavigationManagement } from '@/components/admin/NavigationManagement';
 import { KnowledgeBaseManagement } from '@/components/admin/KnowledgeBaseManagement';
+import { RoomAccessManagement } from '@/components/admin/RoomAccessManagement';
 
 interface UserWithRole {
   id: string;
@@ -396,7 +397,11 @@ export function AdminPage() {
             </TabsTrigger>
             <TabsTrigger value="navigation" className="gap-2">
               <LayoutDashboard className="h-4 w-4" />
-              {t('nav.menuAndPages')}
+              {language === 'he' ? 'תפריט ודפים' : 'Menu & Pages'}
+            </TabsTrigger>
+            <TabsTrigger value="room-access" className="gap-2">
+              <KeyRound className="h-4 w-4" />
+              {language === 'he' ? 'הגדרות כניסה' : 'Access Settings'}
             </TabsTrigger>
           </TabsList>
 
@@ -749,6 +754,10 @@ export function AdminPage() {
 
           <TabsContent value="navigation" className="space-y-6">
             <NavigationManagement />
+          </TabsContent>
+
+          <TabsContent value="room-access" className="space-y-6">
+            <RoomAccessManagement />
           </TabsContent>
         </Tabs>
 

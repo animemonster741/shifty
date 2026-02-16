@@ -17,7 +17,7 @@ interface NavigationContextType {
   tabs: NavigationTab[];
   isLoading: boolean;
   refreshTabs: () => Promise<void>;
-  getVisibleTabs: (isAdmin: boolean) => NavigationTab[];
+  getVisibleTabs: (isAdmin: boolean, isAccessOnly?: boolean) => NavigationTab[];
 }
 
 const NavigationContext = createContext<NavigationContextType | undefined>(undefined);
@@ -66,7 +66,10 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     await fetchTabs();
   };
 
-  const getVisibleTabs = useCallback((isAdminUser: boolean): NavigationTab[] => {
+  const getVisibleTabs = useCallback((isAdminUser: boolean, isAccessOnly: boolean = false): NavigationTab[] => {
+    if (isAccessOnly) {
+      return tabs.filter(tab => tab.tab_key === 'room-access');
+    }
     // Admins see all tabs, regular users see only visible tabs
     return tabs.filter(tab => isAdminUser || tab.is_visible);
   }, [tabs]);

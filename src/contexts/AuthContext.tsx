@@ -9,6 +9,7 @@ export interface AppUser {
   employeeId: string;
   fullName: string;
   role: UserRole;
+  isAccessOnly: boolean;
 }
 
 interface AuthContextType {
@@ -17,6 +18,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   isAdmin: boolean;
+  isAccessOnly: boolean;
   login: (employeeId: string, password: string) => Promise<{ error: string | null }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -58,6 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         employeeId: profile.employee_id,
         fullName: profile.full_name,
         role: (roleData?.role as UserRole) || 'user',
+        isAccessOnly: profile.is_access_only ?? false,
       };
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
@@ -159,6 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: !!session && !!user,
     isLoading,
     isAdmin: user?.role === 'admin',
+    isAccessOnly: user?.isAccessOnly ?? false,
     login,
     logout,
     refreshUser,

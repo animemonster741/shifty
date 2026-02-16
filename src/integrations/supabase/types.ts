@@ -195,6 +195,7 @@ export type Database = {
           employee_id: string
           full_name: string
           id: string
+          is_access_only: boolean
           updated_at: string
         }
         Insert: {
@@ -202,6 +203,7 @@ export type Database = {
           employee_id: string
           full_name: string
           id: string
+          is_access_only?: boolean
           updated_at?: string
         }
         Update: {
@@ -209,6 +211,7 @@ export type Database = {
           employee_id?: string
           full_name?: string
           id?: string
+          is_access_only?: boolean
           updated_at?: string
         }
         Relationships: []

@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ArrowLeft, Users, Building2, Loader2, Plus, Shield, User as UserIcon, Pencil, Eye, EyeOff, Key, Check, X, Link as LinkIcon, LayoutDashboard, BookOpen, KeyRound } from 'lucide-react';
+import { ArrowLeft, Users, Building2, Loader2, Plus, Shield, User as UserIcon, Pencil, Eye, EyeOff, Key, Check, X, Link as LinkIcon, LayoutDashboard, BookOpen, KeyRound, DoorOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { LinksManagement } from '@/components/admin/LinksManagement';
@@ -27,6 +27,7 @@ interface UserWithRole {
   full_name: string;
   role: UserRole;
   created_at: string;
+  is_access_only: boolean;
 }
 
 interface Team {
@@ -121,6 +122,7 @@ export function AdminPage() {
           full_name: profile.full_name,
           role: (roleRecord?.role as UserRole) || 'user',
           created_at: profile.created_at,
+          is_access_only: (profile as any).is_access_only ?? false,
         };
       });
 
@@ -352,6 +354,22 @@ export function AdminPage() {
     }
   };
 
+  const handleToggleAccessOnly = async (userId: string, currentValue: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_access_only: !currentValue } as any)
+        .eq('id', userId);
+
+      if (error) throw error;
+      toast.success(language === 'he' ? 'ההרשאה עודכנה' : 'Permission updated');
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Error toggling access only:', error);
+      toast.error(error.message || 'Failed to update permission');
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -538,13 +556,21 @@ export function AdminPage() {
                             <TableCell className="font-mono">{u.employee_id}</TableCell>
                             <TableCell>{u.full_name}</TableCell>
                             <TableCell>
-                              <Badge variant={u.role === 'admin' ? 'default' : 'secondary'}>
-                                {u.role === 'admin' ? (
-                                  <><Shield className="h-3 w-3 me-1" />{t('admin.admin')}</>
-                                ) : (
-                                  <><UserIcon className="h-3 w-3 me-1" />{t('admin.regularUser')}</>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <Badge variant={u.role === 'admin' ? 'default' : 'secondary'}>
+                                  {u.role === 'admin' ? (
+                                    <><Shield className="h-3 w-3 me-1" />{t('admin.admin')}</>
+                                  ) : (
+                                    <><UserIcon className="h-3 w-3 me-1" />{t('admin.regularUser')}</>
+                                  )}
+                                </Badge>
+                                {u.is_access_only && (
+                                  <Badge variant="outline" className="text-xs">
+                                    <DoorOpen className="h-3 w-3 me-1" />
+                                    {language === 'he' ? 'כניסה בלבד' : 'Access Only'}
+                                  </Badge>
                                 )}
-                              </Badge>
+                              </div>
                             </TableCell>
                             <TableCell>
                               {u.id === user?.id ? (
@@ -595,6 +621,15 @@ export function AdminPage() {
                                   >
                                     <Key className="h-4 w-4 me-1" />
                                     {t('admin.resetPassword')}
+                                  </Button>
+                                  <Button
+                                    variant={u.is_access_only ? 'secondary' : 'ghost'}
+                                    size="sm"
+                                    onClick={() => handleToggleAccessOnly(u.id, u.is_access_only)}
+                                    title={language === 'he' ? 'כניסה בלבד' : 'Access Only'}
+                                  >
+                                    <DoorOpen className="h-4 w-4 me-1" />
+                                    {language === 'he' ? (u.is_access_only ? 'בטל כניסה בלבד' : 'כניסה בלבד') : (u.is_access_only ? 'Remove Access Only' : 'Access Only')}
                                   </Button>
                                 </div>
                               )}

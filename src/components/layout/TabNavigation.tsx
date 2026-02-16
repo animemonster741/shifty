@@ -23,7 +23,7 @@ export function TabNavigation({ activeTab, onTabChange, notifications }: TabNavi
   const { t, language } = useLanguage();
   const { globalSearchQuery, resultCounts } = useGlobalSearch();
   const { tabs, isLoading, getVisibleTabs } = useNavigation();
-  const { isAdmin } = useAuth();
+  const { isAdmin, isAccessOnly } = useAuth();
 
   const getSearchResultCount = (tabKey: string): number => {
     if (!globalSearchQuery.trim()) return 0;
@@ -38,7 +38,7 @@ export function TabNavigation({ activeTab, onTabChange, notifications }: TabNavi
     return Icon ? <Icon className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />;
   };
 
-  const visibleTabs = getVisibleTabs(isAdmin);
+  const visibleTabs = getVisibleTabs(isAdmin, isAccessOnly);
 
   if (isLoading) {
     return (

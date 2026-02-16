@@ -19,10 +19,10 @@ import { useAuth } from '@/contexts/AuthContext';
 export function Dashboard() {
   const { direction } = useLanguage();
   const { tabs, isLoading, getVisibleTabs } = useNavigation();
-  const { isAdmin } = useAuth();
+  const { isAdmin, isAccessOnly } = useAuth();
   
   // Memoize visible tabs to prevent unnecessary re-renders
-  const visibleTabs = useMemo(() => getVisibleTabs(isAdmin), [tabs, isAdmin, getVisibleTabs]);
+  const visibleTabs = useMemo(() => getVisibleTabs(isAdmin, isAccessOnly), [tabs, isAdmin, isAccessOnly, getVisibleTabs]);
   
   // Get initial tab key from first visible tab
   const initialTabKey = useMemo(() => {

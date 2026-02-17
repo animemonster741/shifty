@@ -10,6 +10,7 @@ import { LinksTab } from '@/pages/tabs/LinksTab';
 import { KnowledgeBaseTab } from '@/pages/tabs/KnowledgeBaseTab';
 import { RoomAccessTab } from '@/pages/tabs/RoomAccessTab';
 import { CustomPageTab } from '@/pages/tabs/CustomPageTab';
+import { TokensTab } from '@/pages/tabs/TokensTab';
 import { TabNotification, AlertChangeLog, IgnoredAlert } from '@/types';
 import { mockAlerts, mockSecondaryAlerts } from '@/data/mockData';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -132,6 +133,8 @@ export function Dashboard() {
         return <KnowledgeBaseTab />;
       case 'room-access':
         return <RoomAccessTab />;
+      case 'tokens':
+        return <TokensTab />;
       case 'statistics':
         return <StatisticsTab />;
       case 'archive':

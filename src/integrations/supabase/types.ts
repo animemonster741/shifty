@@ -338,6 +338,77 @@ export type Database = {
         }
         Relationships: []
       }
+      token_activity_log: {
+        Row: {
+          action_type: string
+          created_at: string
+          created_by: string | null
+          id: string
+          operator_id: string
+          requestor_id: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          operator_id: string
+          requestor_id: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          operator_id?: string
+          requestor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "token_activity_log_requestor_id_fkey"
+            columns: ["requestor_id"]
+            isOneToOne: false
+            referencedRelation: "tokens_registry"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tokens_registry: {
+        Row: {
+          company: string
+          created_at: string
+          created_by: string | null
+          full_name: string
+          id: string
+          id_number: string
+          phone_number: string
+          token_type: string
+          updated_at: string
+        }
+        Insert: {
+          company: string
+          created_at?: string
+          created_by?: string | null
+          full_name: string
+          id?: string
+          id_number: string
+          phone_number: string
+          token_type: string
+          updated_at?: string
+        }
+        Update: {
+          company?: string
+          created_at?: string
+          created_by?: string | null
+          full_name?: string
+          id?: string
+          id_number?: string
+          phone_number?: string
+          token_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       useful_links: {
         Row: {
           category: string | null

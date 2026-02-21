@@ -4,6 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { ExternalLink, Loader2 } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
+import { Badge } from '@/components/ui/badge';
 
 interface UsefulLink {
   id: string;
@@ -13,6 +15,8 @@ interface UsefulLink {
   image_url: string | null;
   description: string | null;
   category: string | null;
+  is_internal: boolean;
+  internal_route: string | null;
   created_at: string;
 }
 
@@ -77,6 +81,68 @@ export function LinksTab() {
     );
   }
 
+  const renderCard = (link: UsefulLink) => {
+    const IconComponent = getIcon(link.icon);
+    const cardContent = (
+      <>
+        <div className="relative flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
+          {link.image_url ? (
+            <img 
+              src={link.image_url} 
+              alt={link.name} 
+              className="w-8 h-8 object-contain rounded"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+              }}
+            />
+          ) : (
+            <IconComponent className="h-6 w-6" />
+          )}
+          {link.image_url && <IconComponent className="h-6 w-6 hidden" />}
+        </div>
+        <div className="text-center">
+          <h3 className="font-medium text-sm text-foreground group-hover:text-primary transition-colors line-clamp-2">
+            {link.name}
+          </h3>
+          {link.description && (
+            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+              {link.description}
+            </p>
+          )}
+        </div>
+        {link.is_internal && (
+          <Badge variant="secondary" className="absolute top-2 start-2 text-[10px] px-1.5 py-0">
+            System
+          </Badge>
+        )}
+        <ExternalLink className="absolute top-2 end-2 h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+      </>
+    );
+
+    const cardClassName = "group relative aspect-square flex flex-col items-center justify-center gap-3 p-4 rounded-xl bg-card/50 backdrop-blur-sm border border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+
+    if (link.is_internal && link.internal_route) {
+      return (
+        <Link key={link.id} to={link.internal_route} className={cardClassName}>
+          {cardContent}
+        </Link>
+      );
+    }
+
+    return (
+      <a
+        key={link.id}
+        href={link.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={cardClassName}
+      >
+        {cardContent}
+      </a>
+    );
+  };
+
   return (
     <div className="space-y-8">
       {Object.entries(groupedLinks).map(([category, categoryLinks]) => (
@@ -85,50 +151,7 @@ export function LinksTab() {
             <h2 className="text-lg font-semibold mb-4 text-foreground">{category}</h2>
           )}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            {categoryLinks.map((link) => {
-              const IconComponent = getIcon(link.icon);
-              return (
-                <a
-                  key={link.id}
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group relative aspect-square flex flex-col items-center justify-center gap-3 p-4 rounded-xl 
-                    bg-card/50 backdrop-blur-sm border border-border/50 
-                    hover:border-primary/50 hover:bg-primary/5 
-                    transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/10
-                    focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <div className="relative flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
-                    {link.image_url ? (
-                      <img 
-                        src={link.image_url} 
-                        alt={link.name} 
-                        className="w-8 h-8 object-contain rounded"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                          e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                        }}
-                      />
-                    ) : (
-                      <IconComponent className="h-6 w-6" />
-                    )}
-                    {link.image_url && <IconComponent className="h-6 w-6 hidden" />}
-                  </div>
-                  <div className="text-center">
-                    <h3 className="font-medium text-sm text-foreground group-hover:text-primary transition-colors line-clamp-2">
-                      {link.name}
-                    </h3>
-                    {link.description && (
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                        {link.description}
-                      </p>
-                    )}
-                  </div>
-                  <ExternalLink className="absolute top-2 end-2 h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                </a>
-              );
-            })}
+            {categoryLinks.map(renderCard)}
           </div>
         </div>
       ))}

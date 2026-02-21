@@ -12,6 +12,8 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { AdminPage } from "./pages/Admin";
 import { SettingsPage } from "./pages/Settings";
+import { AccessControlPage } from "./pages/AccessControlPage";
+import { TokensPage } from "./pages/TokensPage";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +32,8 @@ const App = () => (
                     <Route path="/" element={<Index />} />
                     <Route path="/admin" element={<AdminPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
+                    <Route path="/access-control" element={<AccessControlPage />} />
+                    <Route path="/tokens" element={<TokensPage />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </BrowserRouter>

@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 import { Loader2, Plus, Pencil, Trash2, ExternalLink, Link as LinkIcon } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { toast } from 'sonner';
@@ -21,19 +22,26 @@ interface UsefulLink {
   image_url: string | null;
   description: string | null;
   category: string | null;
+  is_internal: boolean;
+  internal_route: string | null;
   created_at: string;
 }
 
+const INTERNAL_ROUTES = [
+  { value: '/access-control', label_he: 'ניהול כניסה', label_en: 'Access Management' },
+  { value: '/tokens', label_he: 'ניהול טוקנים', label_en: 'Token Management' },
+  { value: '/knowledge-base', label_he: 'בסיס ידע', label_en: 'Knowledge Base' },
+];
+
 const linkSchema = z.object({
   name: z.string().min(2, 'Link name is required').max(100),
-  url: z.string().url('Please enter a valid URL'),
+  url: z.string().min(1),
   icon: z.string().optional(),
   image_url: z.string().url().optional().or(z.literal('')),
   description: z.string().max(200).optional(),
   category: z.string().max(50).optional(),
 });
 
-// Common Lucide icons for selection
 const COMMON_ICONS = [
   'Link', 'ExternalLink', 'Globe', 'FileText', 'Database', 'Server', 
   'Monitor', 'Smartphone', 'Settings', 'Wrench', 'Activity', 'BarChart3',
@@ -41,18 +49,21 @@ const COMMON_ICONS = [
   'Mail', 'MessageSquare', 'Bell', 'Calendar', 'Clock', 'Bookmark',
   'Star', 'Heart', 'Zap', 'Cpu', 'HardDrive', 'Cloud',
   'Github', 'Gitlab', 'Code', 'Terminal', 'Folder', 'File',
+  'DoorOpen',
 ];
 
 export function LinksManagement() {
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [links, setLinks] = useState<UsefulLink[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   
   // Form state
+  const [linkType, setLinkType] = useState<'external' | 'internal'>('external');
   const [name, setName] = useState('');
   const [url, setUrl] = useState('');
+  const [internalRoute, setInternalRoute] = useState('');
   const [icon, setIcon] = useState('Link');
   const [imageUrl, setImageUrl] = useState('');
   const [description, setDescription] = useState('');
@@ -61,8 +72,10 @@ export function LinksManagement() {
   
   // Edit modal
   const [editingLink, setEditingLink] = useState<UsefulLink | null>(null);
+  const [editLinkType, setEditLinkType] = useState<'external' | 'internal'>('external');
   const [editName, setEditName] = useState('');
   const [editUrl, setEditUrl] = useState('');
+  const [editInternalRoute, setEditInternalRoute] = useState('');
   const [editIcon, setEditIcon] = useState('');
   const [editImageUrl, setEditImageUrl] = useState('');
   const [editDescription, setEditDescription] = useState('');
@@ -98,9 +111,12 @@ export function LinksManagement() {
     e.preventDefault();
     setFormError('');
 
+    const isInternal = linkType === 'internal';
+    const finalUrl = isInternal ? internalRoute : url.trim();
+
     const validation = linkSchema.safeParse({
       name: name.trim(),
-      url: url.trim(),
+      url: finalUrl,
       icon: icon || 'Link',
       image_url: imageUrl.trim() || undefined,
       description: description.trim() || undefined,
@@ -116,11 +132,13 @@ export function LinksManagement() {
     try {
       const { error } = await supabase.from('useful_links').insert({
         name: name.trim(),
-        url: url.trim(),
+        url: finalUrl,
         icon: icon || 'Link',
         image_url: imageUrl.trim() || null,
         description: description.trim() || null,
         category: category.trim() || null,
+        is_internal: isInternal,
+        internal_route: isInternal ? internalRoute : null,
         created_by: user?.id,
       });
 
@@ -129,6 +147,8 @@ export function LinksManagement() {
       toast.success(t('links.linkAdded'));
       setName('');
       setUrl('');
+      setInternalRoute('');
+      setLinkType('external');
       setIcon('Link');
       setImageUrl('');
       setDescription('');
@@ -145,9 +165,12 @@ export function LinksManagement() {
   const handleEditLink = async () => {
     if (!editingLink) return;
 
+    const isInternal = editLinkType === 'internal';
+    const finalUrl = isInternal ? editInternalRoute : editUrl.trim();
+
     const validation = linkSchema.safeParse({
       name: editName.trim(),
-      url: editUrl.trim(),
+      url: finalUrl,
       icon: editIcon || 'Link',
       image_url: editImageUrl.trim() || undefined,
       description: editDescription.trim() || undefined,
@@ -165,11 +188,13 @@ export function LinksManagement() {
         .from('useful_links')
         .update({
           name: editName.trim(),
-          url: editUrl.trim(),
+          url: finalUrl,
           icon: editIcon || 'Link',
           image_url: editImageUrl.trim() || null,
           description: editDescription.trim() || null,
           category: editCategory.trim() || null,
+          is_internal: isInternal,
+          internal_route: isInternal ? editInternalRoute : null,
         })
         .eq('id', editingLink.id);
 
@@ -208,8 +233,10 @@ export function LinksManagement() {
 
   const openEditModal = (link: UsefulLink) => {
     setEditingLink(link);
+    setEditLinkType(link.is_internal ? 'internal' : 'external');
     setEditName(link.name);
-    setEditUrl(link.url);
+    setEditUrl(link.is_internal ? '' : link.url);
+    setEditInternalRoute(link.internal_route || '');
     setEditIcon(link.icon || 'Link');
     setEditImageUrl(link.image_url || '');
     setEditDescription(link.description || '');
@@ -223,7 +250,6 @@ export function LinksManagement() {
     return Icon || ExternalLink;
   };
 
-  // Get unique categories for suggestions
   const existingCategories = [...new Set(links.map(l => l.category).filter(Boolean))];
 
   return (
@@ -239,6 +265,31 @@ export function LinksManagement() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleAddLink} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {/* Link Type Toggle */}
+            <div className="space-y-2 sm:col-span-2 lg:col-span-3">
+              <Label>{language === 'he' ? 'סוג קישור' : 'Link Type'}</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={linkType === 'external' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setLinkType('external')}
+                >
+                  <ExternalLink className="h-4 w-4 me-2" />
+                  {language === 'he' ? 'כתובת חיצונית' : 'External URL'}
+                </Button>
+                <Button
+                  type="button"
+                  variant={linkType === 'internal' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setLinkType('internal')}
+                >
+                  <LinkIcon className="h-4 w-4 me-2" />
+                  {language === 'he' ? 'דף פנימי' : 'Internal Page'}
+                </Button>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="linkName">{t('links.linkName')}</Label>
               <Input
@@ -250,17 +301,37 @@ export function LinksManagement() {
                 className="input-noc"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="linkUrl">{t('links.url')}</Label>
-              <Input
-                id="linkUrl"
-                type="url"
-                placeholder="https://example.com"
-                value={url}
-                onChange={(e) => { setUrl(e.target.value); setFormError(''); }}
-                className="input-noc"
-              />
-            </div>
+
+            {linkType === 'external' ? (
+              <div className="space-y-2">
+                <Label htmlFor="linkUrl">{t('links.url')}</Label>
+                <Input
+                  id="linkUrl"
+                  type="url"
+                  placeholder="https://example.com"
+                  value={url}
+                  onChange={(e) => { setUrl(e.target.value); setFormError(''); }}
+                  className="input-noc"
+                />
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label>{language === 'he' ? 'דף פנימי' : 'Internal Page'}</Label>
+                <Select value={internalRoute} onValueChange={setInternalRoute}>
+                  <SelectTrigger className="input-noc">
+                    <SelectValue placeholder={language === 'he' ? 'בחר דף...' : 'Select page...'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {INTERNAL_ROUTES.map((route) => (
+                      <SelectItem key={route.value} value={route.value}>
+                        {language === 'he' ? route.label_he : route.label_en}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="linkIcon">{t('links.icon')}</Label>
               <Select value={icon} onValueChange={setIcon}>
@@ -399,8 +470,15 @@ export function LinksManagement() {
                               {link.category}
                             </span>
                           )}
+                          {link.is_internal && (
+                            <Badge variant="outline" className="text-xs">
+                              {language === 'he' ? 'דף פנימי' : 'Internal'}
+                            </Badge>
+                          )}
                         </div>
-                        <p className="text-xs text-muted-foreground truncate">{link.url}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {link.is_internal ? link.internal_route : link.url}
+                        </p>
                         {link.description && (
                           <p className="text-xs text-muted-foreground mt-0.5 truncate">{link.description}</p>
                         )}
@@ -439,6 +517,31 @@ export function LinksManagement() {
             <DialogDescription>{t('links.editLinkDesc')}</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
+            {/* Link Type Toggle */}
+            <div className="space-y-2">
+              <Label>{language === 'he' ? 'סוג קישור' : 'Link Type'}</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={editLinkType === 'external' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setEditLinkType('external')}
+                >
+                  <ExternalLink className="h-4 w-4 me-2" />
+                  {language === 'he' ? 'כתובת חיצונית' : 'External URL'}
+                </Button>
+                <Button
+                  type="button"
+                  variant={editLinkType === 'internal' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setEditLinkType('internal')}
+                >
+                  <LinkIcon className="h-4 w-4 me-2" />
+                  {language === 'he' ? 'דף פנימי' : 'Internal Page'}
+                </Button>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label>{t('links.linkName')}</Label>
               <Input
@@ -447,15 +550,35 @@ export function LinksManagement() {
                 className="input-noc"
               />
             </div>
-            <div className="space-y-2">
-              <Label>{t('links.url')}</Label>
-              <Input
-                type="url"
-                value={editUrl}
-                onChange={(e) => setEditUrl(e.target.value)}
-                className="input-noc"
-              />
-            </div>
+
+            {editLinkType === 'external' ? (
+              <div className="space-y-2">
+                <Label>{t('links.url')}</Label>
+                <Input
+                  type="url"
+                  value={editUrl}
+                  onChange={(e) => setEditUrl(e.target.value)}
+                  className="input-noc"
+                />
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label>{language === 'he' ? 'דף פנימי' : 'Internal Page'}</Label>
+                <Select value={editInternalRoute} onValueChange={setEditInternalRoute}>
+                  <SelectTrigger className="input-noc">
+                    <SelectValue placeholder={language === 'he' ? 'בחר דף...' : 'Select page...'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {INTERNAL_ROUTES.map((route) => (
+                      <SelectItem key={route.value} value={route.value}>
+                        {language === 'he' ? route.label_he : route.label_en}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label>{t('links.icon')}</Label>
               <Select value={editIcon} onValueChange={setEditIcon}>

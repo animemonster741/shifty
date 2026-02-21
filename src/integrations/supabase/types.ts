@@ -418,6 +418,8 @@ export type Database = {
           icon: string | null
           id: string
           image_url: string | null
+          internal_route: string | null
+          is_internal: boolean
           name: string
           updated_at: string
           url: string
@@ -430,6 +432,8 @@ export type Database = {
           icon?: string | null
           id?: string
           image_url?: string | null
+          internal_route?: string | null
+          is_internal?: boolean
           name: string
           updated_at?: string
           url: string
@@ -442,6 +446,8 @@ export type Database = {
           icon?: string | null
           id?: string
           image_url?: string | null
+          internal_route?: string | null
+          is_internal?: boolean
           name?: string
           updated_at?: string
           url?: string

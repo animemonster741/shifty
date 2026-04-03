@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useGlobalSearch } from '@/contexts/GlobalSearchContext';
 import { IgnoredAlert, AlertFilters, AlertChangeLog } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
 import { AlertsTable } from '@/components/alerts/AlertsTable';
 import { AddAlertModal } from '@/components/alerts/AddAlertModal';
 import { AlertDetailModal } from '@/components/alerts/AlertDetailModal';
@@ -126,24 +127,58 @@ export function AlertsTab({ alerts, secondaryAlerts, onAlertsChange, onSecondary
     setAlertCount(totalGloballyFiltered);
   }, [globallyFilteredAlerts.length, globallyFilteredSecondaryAlerts.length, setAlertCount]);
 
-  const handleAddAlert = (data: any) => {
-    const newAlert: IgnoredAlert = {
-      id: `alert-${Date.now()}`,
-      ...data,
-      commentCount: 0,
-      changeLogs: [],
+  const handleAddAlert = async (data: any) => {
+    if (!user?.id || !user.employeeId || !user.fullName) {
+      throw new Error('Not authenticated');
+    }
+
+    const payload = {
+      is_secondary: false,
+      created_by: user.id,
+      added_by: user.employeeId,
+      added_by_name: user.fullName,
+      created_time: (data.createdTime ? new Date(data.createdTime) : new Date()).toISOString(),
+      team: String(data.team ?? ''),
+      system: String(data.system ?? ''),
+      device_name: String(data.deviceName ?? ''),
+      summary: String(data.summary ?? ''),
+      full_alert_paste: data.fullAlertPaste ? String(data.fullAlertPaste) : null,
+      instruction_given_by: String(data.instructionGivenBy ?? ''),
+      ignore_until: new Date(data.ignoreUntil).toISOString(),
+      notes: data.notes ? String(data.notes) : null,
+      status: String(data.status ?? 'active'),
+      comment_count: 0,
     };
-    onAlertsChange([newAlert, ...alerts]);
+
+    const { error } = await (supabase as any).from('ignored_alerts').insert(payload);
+    if (error) throw error;
   };
 
-  const handleAddSecondaryAlert = (data: any) => {
-    const newAlert: IgnoredAlert = {
-      id: `sec-alert-${Date.now()}`,
-      ...data,
-      commentCount: 0,
-      changeLogs: [],
+  const handleAddSecondaryAlert = async (data: any) => {
+    if (!user?.id || !user.employeeId || !user.fullName) {
+      throw new Error('Not authenticated');
+    }
+
+    const payload = {
+      is_secondary: true,
+      created_by: user.id,
+      added_by: user.employeeId,
+      added_by_name: user.fullName,
+      created_time: (data.createdTime ? new Date(data.createdTime) : new Date()).toISOString(),
+      team: String(data.team ?? ''),
+      system: String(data.system ?? ''),
+      device_name: String(data.deviceName ?? ''),
+      summary: String(data.summary ?? ''),
+      full_alert_paste: data.fullAlertPaste ? String(data.fullAlertPaste) : null,
+      instruction_given_by: String(data.instructionGivenBy ?? ''),
+      ignore_until: new Date(data.ignoreUntil).toISOString(),
+      notes: data.notes ? String(data.notes) : null,
+      status: String(data.status ?? 'active'),
+      comment_count: 0,
     };
-    onSecondaryAlertsChange([newAlert, ...secondaryAlerts]);
+
+    const { error } = await (supabase as any).from('ignored_alerts').insert(payload);
+    if (error) throw error;
   };
 
   const handleViewAlert = (alert: IgnoredAlert, source: 'primary' | 'secondary') => {

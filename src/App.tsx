@@ -14,6 +14,7 @@ import { AdminPage } from "./pages/Admin";
 import { SettingsPage } from "./pages/Settings";
 import { AccessControlPage } from "./pages/AccessControlPage";
 import { TokensPage } from "./pages/TokensPage";
+import { DevCreateUserPage } from "./pages/DevCreateUser";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,9 @@ const App = () => (
                     <Route path="/settings" element={<SettingsPage />} />
                     <Route path="/access-control" element={<AccessControlPage />} />
                     <Route path="/tokens" element={<TokensPage />} />
+                    {import.meta.env.DEV && (
+                      <Route path="/dev/create-user" element={<DevCreateUserPage />} />
+                    )}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </BrowserRouter>

@@ -38,7 +38,7 @@ import { cn } from '@/lib/utils';
 interface AddAlertModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any) => Promise<void>;
 }
 
 interface ParsedAlertData {
@@ -104,6 +104,7 @@ export function AddAlertModal({ open, onOpenChange, onSubmit }: AddAlertModalPro
   const [alertPasteContent, setAlertPasteContent] = useState('');
   const [parsedData, setParsedData] = useState<ParsedAlertData>({});
   const [isTimePopoverOpen, setIsTimePopoverOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     instructionGivenBy: '',
@@ -200,7 +201,7 @@ export function AddAlertModal({ open, onOpenChange, onSubmit }: AddAlertModalPro
     }));
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!ignoreUntil) {
@@ -236,16 +237,24 @@ export function AddAlertModal({ open, onOpenChange, onSubmit }: AddAlertModalPro
       approvalReason: requiresApproval ? 'duration' : (isWeekendException ? 'weekend_exception' : undefined),
     };
 
-    onSubmit(alertData);
-    onOpenChange(false);
-    resetForm();
+    setIsSubmitting(true);
+    try {
+      await onSubmit(alertData);
+      onOpenChange(false);
+      resetForm();
 
-    if (requiresApproval && !isAdmin) {
-      toast.warning(t.warningApproval);
-    } else if (isWeekendException) {
-      toast.success(t.successWeekendRule);
-    } else {
-      toast.success(t.successCreated);
+      if (requiresApproval && !isAdmin) {
+        toast.warning(t.warningApproval);
+      } else if (isWeekendException) {
+        toast.success(t.successWeekendRule);
+      } else {
+        toast.success(t.successCreated);
+      }
+    } catch (err: any) {
+      console.error('Error creating alert:', err);
+      toast.error(err?.message ?? (language === 'he' ? 'שגיאה' : 'Error'));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -598,8 +607,10 @@ export function AddAlertModal({ open, onOpenChange, onSubmit }: AddAlertModalPro
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 {t.cancel}
               </Button>
-              <Button type="submit">
-                {requiresApproval && !isAdmin ? t.submitForApproval : t.addIgnore}
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting
+                  ? (language === 'he' ? 'שומר...' : 'Saving...')
+                  : (requiresApproval && !isAdmin ? t.submitForApproval : t.addIgnore)}
               </Button>
             </DialogFooter>
           </form>

@@ -12,10 +12,10 @@ import { RoomAccessTab } from '@/pages/tabs/RoomAccessTab';
 import { CustomPageTab } from '@/pages/tabs/CustomPageTab';
 import { TokensTab } from '@/pages/tabs/TokensTab';
 import { TabNotification, AlertChangeLog, IgnoredAlert } from '@/types';
-import { mockAlerts, mockSecondaryAlerts } from '@/data/mockData';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNavigation } from '@/contexts/NavigationContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 export function Dashboard() {
   const { direction } = useLanguage();
@@ -49,8 +49,67 @@ export function Dashboard() {
     logs: false,
     links: false,
   });
-  const [alerts, setAlerts] = useState<IgnoredAlert[]>(mockAlerts);
-  const [secondaryAlerts, setSecondaryAlerts] = useState<IgnoredAlert[]>(mockSecondaryAlerts);
+  const [alerts, setAlerts] = useState<IgnoredAlert[]>([]);
+  const [secondaryAlerts, setSecondaryAlerts] = useState<IgnoredAlert[]>([]);
+
+  const fetchAlerts = useCallback(async () => {
+    try {
+      const { data, error } = await (supabase as any)
+        .from('ignored_alerts')
+        .select('*')
+        .order('created_time', { ascending: false });
+
+      if (error) throw error;
+
+      const rows = (data || []) as any[];
+      const mapped: (IgnoredAlert & { isSecondary?: boolean })[] = rows.map((r) => ({
+        id: r.id,
+        addedBy: r.added_by,
+        addedByName: r.added_by_name,
+        createdTime: new Date(r.created_time),
+        team: r.team,
+        system: r.system ?? '',
+        deviceName: r.device_name ?? '',
+        summary: r.summary ?? '',
+        fullAlertPaste: r.full_alert_paste ?? undefined,
+        instructionGivenBy: r.instruction_given_by,
+        ignoreUntil: new Date(r.ignore_until),
+        notes: r.notes ?? undefined,
+        status: r.status,
+        modifiedBy: r.modified_by ?? undefined,
+        modifiedByName: r.modified_by_name ?? undefined,
+        modifiedTime: r.modified_time ? new Date(r.modified_time) : undefined,
+        archivedTime: r.archived_time ? new Date(r.archived_time) : undefined,
+        archiveReason: r.archive_reason ?? undefined,
+        approvedBy: r.approved_by ?? undefined,
+        approvalTime: r.approval_time ? new Date(r.approval_time) : undefined,
+        commentCount: r.comment_count ?? 0,
+        changeLogs: [],
+        isSecondary: !!r.is_secondary,
+      }));
+
+      setAlerts(mapped.filter((a) => !a.isSecondary));
+      setSecondaryAlerts(mapped.filter((a) => a.isSecondary));
+    } catch (e) {
+      console.error('Error fetching alerts:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAlerts();
+
+    const channel = supabase
+      .channel('ignored_alerts_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ignored_alerts' }, () => {
+        fetchAlerts();
+        setNotifications((prev) => ({ ...prev, alerts: activeTab !== 'alerts' ? true : prev.alerts }));
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchAlerts, activeTab]);
 
   // Auto-archive expired alerts
   const archiveExpiredAlerts = useCallback(() => {

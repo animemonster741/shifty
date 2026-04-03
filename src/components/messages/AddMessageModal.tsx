@@ -21,7 +21,7 @@ import { sanitizeHTML } from '@/utils/sanitize';
 interface AddMessageModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any) => Promise<void>;
 }
 
 export function AddMessageModal({ open, onOpenChange, onSubmit }: AddMessageModalProps) {
@@ -31,8 +31,9 @@ export function AddMessageModal({ open, onOpenChange, onSubmit }: AddMessageModa
   const [content, setContent] = useState('');
   const [attachment, setAttachment] = useState<File | null>(null);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!title.trim() || !content.trim() || content === '<p></p>') {
@@ -51,10 +52,17 @@ export function AddMessageModal({ open, onOpenChange, onSubmit }: AddMessageModa
       commentCount: 0,
     };
 
-    onSubmit(messageData);
-    onOpenChange(false);
-    resetForm();
-    toast.success(t('messages.posted') || 'Message posted successfully');
+    setIsSubmitting(true);
+    try {
+      await onSubmit(messageData);
+      onOpenChange(false);
+      resetForm();
+      toast.success(t('messages.posted') || 'Message posted successfully');
+    } catch (err: any) {
+      toast.error(err?.message ?? (t('common.error') || 'Error'));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const resetForm = () => {
@@ -185,7 +193,9 @@ export function AddMessageModal({ open, onOpenChange, onSubmit }: AddMessageModa
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               {t('common.cancel') || 'Cancel'}
             </Button>
-            <Button type="submit">{t('messages.post') || 'Post Message'}</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (t('common.loading') || 'Loading...') : (t('messages.post') || 'Post Message')}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

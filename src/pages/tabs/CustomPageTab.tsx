@@ -18,6 +18,26 @@ export function CustomPageTab({ tabId }: CustomPageTabProps) {
     fetchContent();
   }, [tabId]);
 
+  useEffect(() => {
+    // Keep content updated for all users when admins edit the page.
+    // This requires the `custom_pages` table to be enabled for realtime in Supabase.
+    const channel = supabase
+      .channel(`custom_pages_changes:${tabId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'custom_pages', filter: `tab_id=eq.${tabId}` },
+        () => {
+          fetchContent();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabId]);
+
   const fetchContent = async () => {
     setIsLoading(true);
     setError(null);

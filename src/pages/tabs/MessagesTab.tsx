@@ -1,24 +1,71 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useGlobalSearch } from '@/contexts/GlobalSearchContext';
 import { ImportantMessage } from '@/types';
-import { mockMessages } from '@/data/mockData';
 import { MessageCard } from '@/components/messages/MessageCard';
 import { AddMessageModal } from '@/components/messages/AddMessageModal';
 import { MessageDetailModal } from '@/components/messages/MessageDetailModal';
 import { Button } from '@/components/ui/button';
 import { Plus, Pin } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 export function MessagesTab() {
   const { user } = useAuth();
   const { t, direction } = useLanguage();
   const { filterMessages, setMessageCount, globalSearchQuery } = useGlobalSearch();
-  const [messages, setMessages] = useState<ImportantMessage[]>(mockMessages);
+  const [messages, setMessages] = useState<ImportantMessage[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<ImportantMessage | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
+  const fetchMessages = useCallback(async () => {
+    try {
+      const { data, error } = await (supabase as any)
+        .from('important_messages')
+        .select('*')
+        .order('created_time', { ascending: false });
+      if (error) throw error;
+
+      const rows = (data || []) as any[];
+      const mapped: ImportantMessage[] = rows.map((r) => ({
+        id: r.id,
+        title: r.title,
+        content: r.content,
+        addedBy: r.added_by,
+        addedByName: r.added_by_name,
+        createdTime: new Date(r.created_time),
+        attachmentUrl: r.attachment_url ?? undefined,
+        attachmentFilename: r.attachment_filename ?? undefined,
+        attachmentType: r.attachment_type ?? undefined,
+        pinned: !!r.pinned,
+        pinnedBy: r.pinned_by ?? undefined,
+        pinnedTime: r.pinned_time ? new Date(r.pinned_time) : undefined,
+        modifiedBy: r.modified_by ?? undefined,
+        modifiedTime: r.modified_time ? new Date(r.modified_time) : undefined,
+        commentCount: r.comment_count ?? 0,
+      }));
+      setMessages(mapped);
+    } catch (e) {
+      console.error('Error fetching messages:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchMessages();
+
+    const channel = supabase
+      .channel('important_messages_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'important_messages' }, () => {
+        fetchMessages();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchMessages]);
 
   // Apply global search filter
   const filteredMessages = useMemo(() => filterMessages(messages), [messages, filterMessages]);
@@ -31,12 +78,24 @@ export function MessagesTab() {
     setMessageCount(filteredMessages.length);
   }, [filteredMessages.length, setMessageCount]);
 
-  const handleAddMessage = (data: any) => {
-    const newMessage: ImportantMessage = {
-      id: `msg-${Date.now()}`,
-      ...data,
+  const handleAddMessage = async (data: any) => {
+    if (!user?.id || !user.employeeId || !user.fullName) {
+      throw new Error('Not authenticated');
+    }
+
+    const payload = {
+      title: String(data.title ?? '').trim(),
+      content: String(data.content ?? ''),
+      created_by: user.id,
+      added_by: user.employeeId,
+      added_by_name: user.fullName,
+      created_time: new Date().toISOString(),
+      pinned: false,
+      comment_count: 0,
     };
-    setMessages(prev => [newMessage, ...prev]);
+
+    const { error } = await (supabase as any).from('important_messages').insert(payload);
+    if (error) throw error;
   };
 
   const handleViewMessage = (message: ImportantMessage) => {
@@ -44,7 +103,7 @@ export function MessagesTab() {
     setIsDetailModalOpen(true);
   };
 
-  const handlePinMessage = (messageId: string) => {
+  const handlePinMessage = async (messageId: string) => {
     const pinnedCount = messages.filter(m => m.pinned && m.id !== messageId).length;
     const message = messages.find(m => m.id === messageId);
     
@@ -55,19 +114,26 @@ export function MessagesTab() {
       return;
     }
 
-    setMessages(prev => prev.map(m => {
-      if (m.id === messageId) {
-        return {
-          ...m,
-          pinned: !m.pinned,
-          pinnedBy: !m.pinned ? user?.employeeId : undefined,
-          pinnedTime: !m.pinned ? new Date() : undefined,
-        };
-      }
-      return m;
-    }));
+    try {
+      const now = new Date();
+      const nextPinned = !message.pinned;
+      const { error } = await (supabase as any)
+        .from('important_messages')
+        .update({
+          pinned: nextPinned,
+          pinned_by: nextPinned ? user?.employeeId : null,
+          pinned_time: nextPinned ? now.toISOString() : null,
+          modified_by: user?.employeeId ?? null,
+          modified_time: now.toISOString(),
+        })
+        .eq('id', messageId);
+      if (error) throw error;
+      toast.success(message.pinned ? 'Message unpinned' : 'Message pinned');
+    } catch (e: any) {
+      console.error('Pin update failed:', e);
+      toast.error(e?.message ?? 'Failed to update pin');
+    }
 
-    toast.success(message.pinned ? 'Message unpinned' : 'Message pinned');
   };
 
   return (

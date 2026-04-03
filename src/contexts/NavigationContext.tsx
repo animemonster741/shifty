@@ -57,8 +57,20 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
       )
       .subscribe();
 
+    // Fallback: also refresh periodically (covers cases where realtime isn't enabled)
+    const interval = window.setInterval(() => {
+      fetchTabs();
+    }, 30_000);
+
+    const onVisibilityChange = () => {
+      if (!document.hidden) fetchTabs();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
     return () => {
       supabase.removeChannel(channel);
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
     };
   }, [fetchTabs]);
 

@@ -12,6 +12,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Moon, Sun, LogOut, User, Shield, Radio, Settings, Cog, Search, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -21,10 +32,8 @@ export function Header() {
   const { t, direction } = useLanguage();
   const { globalSearchQuery, setGlobalSearchQuery } = useGlobalSearch();
 
-  const handleLogout = () => {
-    if (window.confirm(t('auth.logoutConfirm'))) {
-      logout();
-    }
+  const handleLogout = async () => {
+    await logout();
   };
 
   return (
@@ -127,10 +136,34 @@ export function Header() {
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout} className="text-destructive">
-                <LogOut className="me-2 h-4 w-4" />
-                {t('header.logout')}
-              </DropdownMenuItem>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onSelect={(e) => e.preventDefault()}
+                  >
+                    <LogOut className="me-2 h-4 w-4" />
+                    {t('header.logout')}
+                  </DropdownMenuItem>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{t('header.logout')}</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {t('auth.logoutConfirm')}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleLogout}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      {t('auth.signOut')}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

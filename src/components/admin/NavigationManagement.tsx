@@ -11,11 +11,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
-import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+
 import { toast } from 'sonner';
-import { Plus, GripVertical, Eye, EyeOff, Pencil, Trash2, FileText, Loader2, Save } from 'lucide-react';
+import { Plus, Eye, EyeOff, Pencil, Trash2, FileText, Loader2, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import * as LucideIcons from 'lucide-react';
 
@@ -44,49 +42,25 @@ const AVAILABLE_ICONS = [
   'Tag', 'User', 'Users', 'Zap', 'Globe'
 ];
 
-function SortableItem({ tab, onToggleVisibility, onEdit, onDelete, language }: { 
+function TabItem({ tab, onToggleVisibility, onEdit, onDelete, language }: { 
   tab: NavigationTab;
   onToggleVisibility: (id: string, visible: boolean) => void;
   onEdit: (tab: NavigationTab) => void;
   onDelete: (tab: NavigationTab) => void;
   language: 'en' | 'he';
 }) {
-  const { t, direction } = useLanguage();
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: tab.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
+  const { t } = useLanguage();
 
   // Get icon component dynamically
   const IconComponent = (LucideIcons as any)[tab.icon] || LucideIcons.FileText;
 
   return (
     <div
-      ref={setNodeRef}
-      style={style}
       className={cn(
         "flex items-center gap-3 p-3 bg-muted/30 border border-border rounded-lg",
-        isDragging && "opacity-50 shadow-lg",
         !tab.is_visible && "opacity-60"
       )}
     >
-      <button
-        {...attributes}
-        {...listeners}
-        className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground"
-      >
-        <GripVertical className="h-5 w-5" />
-      </button>
-      
       <div className="flex items-center gap-2 flex-1 min-w-0">
         <IconComponent className="h-4 w-4 text-primary shrink-0" />
         <span className="font-medium truncate">
@@ -154,7 +128,6 @@ export function NavigationManagement() {
   const { user } = useAuth();
   const [tabs, setTabs] = useState<NavigationTab[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
   
   // New page modal
   const [isNewPageOpen, setIsNewPageOpen] = useState(false);
@@ -172,16 +145,7 @@ export function NavigationManagement() {
   const [editIcon, setEditIcon] = useState('FileText');
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
+
 
   useEffect(() => {
     fetchTabs();
@@ -205,43 +169,7 @@ export function NavigationManagement() {
     }
   };
 
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-    
-    if (!over || active.id === over.id) return;
 
-    const oldIndex = tabs.findIndex(tab => tab.id === active.id);
-    const newIndex = tabs.findIndex(tab => tab.id === over.id);
-    
-    const newTabs = arrayMove(tabs, oldIndex, newIndex);
-    setTabs(newTabs);
-    
-    // Update display orders in database
-    setIsSaving(true);
-    try {
-      const updates = newTabs.map((tab, index) => ({
-        id: tab.id,
-        display_order: index + 1,
-      }));
-
-      for (const update of updates) {
-        const { error } = await supabase
-          .from('navigation_tabs')
-          .update({ display_order: update.display_order })
-          .eq('id', update.id);
-        
-        if (error) throw error;
-      }
-
-      toast.success(t('nav.orderSaved'));
-    } catch (error) {
-      console.error('Error saving order:', error);
-      toast.error(t('common.error'));
-      fetchTabs(); // Revert on error
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   const handleToggleVisibility = async (id: string, visible: boolean) => {
     try {
@@ -505,45 +433,28 @@ export function NavigationManagement() {
         </CardContent>
       </Card>
 
-      {/* Tab Order Management */}
+      {/* Tab Visibility Management */}
       <Card className="card-elevated">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <GripVertical className="h-5 w-5" />
-            {t('nav.reorderTabs')}
+            <Eye className="h-5 w-5" />
+            {t('nav.manageTabs')}
           </CardTitle>
-          <CardDescription>{t('nav.reorderTabsDesc')}</CardDescription>
+          <CardDescription>{t('nav.manageTabsDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
-          {isSaving && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              {t('common.loading')}
-            </div>
-          )}
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={tabs.map(t => t.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              <div className="space-y-2">
-                {tabs.map(tab => (
-                  <SortableItem
-                    key={tab.id}
-                    tab={tab}
-                    onToggleVisibility={handleToggleVisibility}
-                    onEdit={handleEditTab}
-                    onDelete={handleDeleteTab}
-                    language={language}
-                  />
-                ))}
-              </div>
-            </SortableContext>
-          </DndContext>
+          <div className="space-y-2">
+            {tabs.map(tab => (
+              <TabItem
+                key={tab.id}
+                tab={tab}
+                onToggleVisibility={handleToggleVisibility}
+                onEdit={handleEditTab}
+                onDelete={handleDeleteTab}
+                language={language}
+              />
+            ))}
+          </div>
         </CardContent>
       </Card>
 

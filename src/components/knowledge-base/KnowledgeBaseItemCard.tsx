@@ -30,13 +30,13 @@ export function KnowledgeBaseItemCard({ item, isAdmin, onDelete }: KnowledgeBase
   // Get display name: custom title > file name > fallback
   const displayName = item.title || item.file_name || (language === 'he' ? 'ללא שם' : 'Untitled');
 
-  // Get file URL for download
-  const getFileUrl = () => {
+  // Get signed file URL for download (private bucket)
+  const getFileUrl = async () => {
     if (item.file_path) {
-      const { data } = supabase.storage
+      const { data } = await supabase.storage
         .from('knowledge-base')
-        .getPublicUrl(item.file_path);
-      return data.publicUrl;
+        .createSignedUrl(item.file_path, 3600);
+      return data?.signedUrl ?? null;
     }
     return null;
   };

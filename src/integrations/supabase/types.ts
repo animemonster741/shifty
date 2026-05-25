@@ -100,6 +100,141 @@ export type Database = {
           },
         ]
       }
+      ignored_alerts: {
+        Row: {
+          added_by: string
+          added_by_name: string
+          approval_time: string | null
+          approved_by: string | null
+          archive_reason: string | null
+          archived_time: string | null
+          comment_count: number
+          created_by: string
+          created_time: string
+          device_name: string
+          full_alert_paste: string | null
+          id: string
+          ignore_until: string
+          instruction_given_by: string
+          is_secondary: boolean
+          modified_by: string | null
+          modified_by_name: string | null
+          modified_time: string | null
+          notes: string | null
+          status: string
+          summary: string
+          system: string
+          team: string
+        }
+        Insert: {
+          added_by: string
+          added_by_name: string
+          approval_time?: string | null
+          approved_by?: string | null
+          archive_reason?: string | null
+          archived_time?: string | null
+          comment_count?: number
+          created_by: string
+          created_time?: string
+          device_name?: string
+          full_alert_paste?: string | null
+          id?: string
+          ignore_until: string
+          instruction_given_by: string
+          is_secondary?: boolean
+          modified_by?: string | null
+          modified_by_name?: string | null
+          modified_time?: string | null
+          notes?: string | null
+          status?: string
+          summary?: string
+          system?: string
+          team: string
+        }
+        Update: {
+          added_by?: string
+          added_by_name?: string
+          approval_time?: string | null
+          approved_by?: string | null
+          archive_reason?: string | null
+          archived_time?: string | null
+          comment_count?: number
+          created_by?: string
+          created_time?: string
+          device_name?: string
+          full_alert_paste?: string | null
+          id?: string
+          ignore_until?: string
+          instruction_given_by?: string
+          is_secondary?: boolean
+          modified_by?: string | null
+          modified_by_name?: string | null
+          modified_time?: string | null
+          notes?: string | null
+          status?: string
+          summary?: string
+          system?: string
+          team?: string
+        }
+        Relationships: []
+      }
+      important_messages: {
+        Row: {
+          added_by: string
+          added_by_name: string
+          attachment_filename: string | null
+          attachment_type: string | null
+          attachment_url: string | null
+          comment_count: number
+          content: string
+          created_by: string
+          created_time: string
+          id: string
+          modified_by: string | null
+          modified_time: string | null
+          pinned: boolean
+          pinned_by: string | null
+          pinned_time: string | null
+          title: string
+        }
+        Insert: {
+          added_by: string
+          added_by_name: string
+          attachment_filename?: string | null
+          attachment_type?: string | null
+          attachment_url?: string | null
+          comment_count?: number
+          content: string
+          created_by: string
+          created_time?: string
+          id?: string
+          modified_by?: string | null
+          modified_time?: string | null
+          pinned?: boolean
+          pinned_by?: string | null
+          pinned_time?: string | null
+          title: string
+        }
+        Update: {
+          added_by?: string
+          added_by_name?: string
+          attachment_filename?: string | null
+          attachment_type?: string | null
+          attachment_url?: string | null
+          comment_count?: number
+          content?: string
+          created_by?: string
+          created_time?: string
+          id?: string
+          modified_by?: string | null
+          modified_time?: string | null
+          pinned?: boolean
+          pinned_by?: string | null
+          pinned_time?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       knowledge_base_items: {
         Row: {
           created_at: string

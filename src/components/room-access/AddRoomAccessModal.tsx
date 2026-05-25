@@ -35,9 +35,7 @@ export function AddRoomAccessModal({ open, onOpenChange, rooms, approvers, onSuc
   const [selectedRoomIds, setSelectedRoomIds] = useState<string[]>([]);
   const [reason, setReason] = useState('');
   const [startDate, setStartDate] = useState<Date | undefined>();
-  const [startTime, setStartTime] = useState('08:00');
   const [endDate, setEndDate] = useState<Date | undefined>();
-  const [endTime, setEndTime] = useState('17:00');
   const [approverId, setApproverId] = useState('');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);

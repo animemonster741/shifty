@@ -46,9 +46,7 @@ export function AddRoomAccessModal({ open, onOpenChange, rooms, approvers, onSuc
     setSelectedRoomIds([]);
     setReason('');
     setStartDate(undefined);
-    setStartTime('08:00');
     setEndDate(undefined);
-    setEndTime('17:00');
     setApproverId('');
     setNotes('');
   };

@@ -35,9 +35,7 @@ export function AddRoomAccessModal({ open, onOpenChange, rooms, approvers, onSuc
   const [selectedRoomIds, setSelectedRoomIds] = useState<string[]>([]);
   const [reason, setReason] = useState('');
   const [startDate, setStartDate] = useState<Date | undefined>();
-  const [startTime, setStartTime] = useState('08:00');
   const [endDate, setEndDate] = useState<Date | undefined>();
-  const [endTime, setEndTime] = useState('17:00');
   const [approverId, setApproverId] = useState('');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -48,9 +46,7 @@ export function AddRoomAccessModal({ open, onOpenChange, rooms, approvers, onSuc
     setSelectedRoomIds([]);
     setReason('');
     setStartDate(undefined);
-    setStartTime('08:00');
     setEndDate(undefined);
-    setEndTime('17:00');
     setApproverId('');
     setNotes('');
   };
@@ -73,11 +69,11 @@ export function AddRoomAccessModal({ open, onOpenChange, rooms, approvers, onSuc
     );
   };
 
-  const combineDateTime = (date: Date | undefined, time: string): string | null => {
+  const toDateOnlyISO = (date: Date | undefined, endOfDay = false): string | null => {
     if (!date) return null;
-    const [hours, minutes] = time.split(':').map(Number);
     const combined = new Date(date);
-    combined.setHours(hours, minutes, 0, 0);
+    if (endOfDay) combined.setHours(23, 59, 59, 999);
+    else combined.setHours(0, 0, 0, 0);
     return combined.toISOString();
   };
 
@@ -86,8 +82,8 @@ export function AddRoomAccessModal({ open, onOpenChange, rooms, approvers, onSuc
   const handleSubmit = async () => {
     if (!isValid) return;
 
-    const startDateTime = combineDateTime(startDate, startTime);
-    const endDateTime = combineDateTime(endDate, endTime);
+    const startDateTime = toDateOnlyISO(startDate, false);
+    const endDateTime = toDateOnlyISO(endDate, true);
 
     if (!startDateTime || !endDateTime) return;
 
@@ -206,7 +202,7 @@ export function AddRoomAccessModal({ open, onOpenChange, rooms, approvers, onSuc
                   <Calendar mode="single" selected={startDate} onSelect={setStartDate} className="p-3 pointer-events-auto" />
                 </PopoverContent>
               </Popover>
-              <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
+              
             </div>
 
             {/* End Date */}
@@ -223,7 +219,7 @@ export function AddRoomAccessModal({ open, onOpenChange, rooms, approvers, onSuc
                   <Calendar mode="single" selected={endDate} onSelect={setEndDate} className="p-3 pointer-events-auto" />
                 </PopoverContent>
               </Popover>
-              <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
+              
             </div>
           </div>
 

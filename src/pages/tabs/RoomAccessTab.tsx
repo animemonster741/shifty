@@ -67,8 +67,12 @@ export function RoomAccessTab() {
   const fetchAll = async () => {
     setIsLoading(true);
     try {
+      // Auto-delete expired entries (admins only succeed; for others the rows are filtered client-side)
+      const nowIso = new Date().toISOString();
+      await supabase.from('room_access_entries').delete().lt('end_date', nowIso);
+
       const [entriesRes, roomsRes, approversRes] = await Promise.all([
-        supabase.from('room_access_entries').select('*').order('created_at', { ascending: false }),
+        supabase.from('room_access_entries').select('*').gte('end_date', nowIso).order('created_at', { ascending: false }),
         supabase.from('rooms').select('*').order('display_order'),
         supabase.from('access_approvers').select('*').order('name'),
       ]);
@@ -206,10 +210,10 @@ export function RoomAccessTab() {
                     </TableCell>
                     <TableCell className="text-sm">{entry.reason}</TableCell>
                     <TableCell className="text-sm whitespace-nowrap">
-                      {format(new Date(entry.start_date), 'dd/MM/yyyy HH:mm')}
+                     {format(new Date(entry.start_date), 'dd/MM/yyyy')}
                     </TableCell>
                     <TableCell className="text-sm whitespace-nowrap">
-                      {format(new Date(entry.end_date), 'dd/MM/yyyy HH:mm')}
+                      {format(new Date(entry.end_date), 'dd/MM/yyyy')}
                     </TableCell>
                     <TableCell className="text-sm">
                       {entry.approver_id ? approverMap[entry.approver_id] || '-' : '-'}

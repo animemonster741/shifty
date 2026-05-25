@@ -1,9 +1,22 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { z } from 'https://esm.sh/zod@3.23.8'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
+
+const loginSchema = z.object({
+  employeeId: z.string().trim().min(1).max(64).regex(/^[A-Za-z0-9_\-.]+$/),
+  password: z.string().min(1).max(200),
+  action: z.literal('login'),
+})
+
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  })
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -11,14 +24,11 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { employeeId, password, action } = await req.json()
-
-    if (!employeeId || !password) {
-      return new Response(
-        JSON.stringify({ error: 'Employee ID and password are required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+    const parsed = loginSchema.safeParse(await req.json().catch(() => ({})))
+    if (!parsed.success) {
+      return json({ error: 'Invalid credentials' }, 401)
     }
+    const { employeeId, password } = parsed.data
 
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -26,58 +36,23 @@ Deno.serve(async (req) => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // Generate internal email from employee ID
     const internalEmail = `${employeeId}@internal.noc.local`
 
-    if (action === 'login') {
-      // Verify the employee ID exists in profiles first
-      const { data: profile, error: profileError } = await supabaseAdmin
-        .from('profiles')
-        .select('id, full_name')
-        .eq('employee_id', employeeId)
-        .maybeSingle()
+    // Verify the password server-side BEFORE returning any identifying info.
+    // This prevents email/employee-ID enumeration via the login endpoint.
+    const { data: signIn, error: signInError } = await supabaseAdmin.auth.signInWithPassword({
+      email: internalEmail,
+      password,
+    })
 
-      if (profileError) {
-        console.error('Profile lookup error:', profileError)
-        return new Response(
-          JSON.stringify({ error: 'Error looking up employee ID' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      }
-
-      if (!profile) {
-        return new Response(
-          JSON.stringify({ error: 'Employee ID not found' }),
-          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      }
-
-      // Get user by ID from auth to verify email matches
-      const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(profile.id)
-
-      if (userError || !userData?.user) {
-        return new Response(
-          JSON.stringify({ error: 'User account not found' }),
-          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      }
-
-      // Return the email for client-side login
-      return new Response(
-        JSON.stringify({ email: userData.user.email }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+    if (signInError || !signIn?.session) {
+      return json({ error: 'Invalid credentials' }, 401)
     }
 
-    return new Response(
-      JSON.stringify({ error: 'Invalid action' }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-  } catch (error) {
-    console.error('Auth error:', error)
-    return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    // Return only the email (already known to a legitimate caller) so the
+    // client can establish its own session via signInWithPassword.
+    return json({ email: internalEmail })
+  } catch (_error) {
+    return json({ error: 'Invalid credentials' }, 401)
   }
 })

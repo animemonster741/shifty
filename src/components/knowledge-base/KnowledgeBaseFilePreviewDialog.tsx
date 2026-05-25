@@ -35,11 +35,20 @@ export function KnowledgeBaseFilePreviewDialog({
     return parts.length > 1 ? parts[parts.length - 1].toLowerCase() : '';
   }, [fileName, filePath]);
 
-  const publicUrl = useMemo(() => {
-    if (!filePath) return null;
-    const { data } = supabase.storage.from('knowledge-base').getPublicUrl(filePath);
-    return data.publicUrl || null;
-  }, [filePath]);
+  const [publicUrl, setPublicUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setPublicUrl(null);
+    if (!open || !filePath) return;
+    supabase.storage
+      .from('knowledge-base')
+      .createSignedUrl(filePath, 3600)
+      .then(({ data }) => {
+        if (!cancelled) setPublicUrl(data?.signedUrl ?? null);
+      });
+    return () => { cancelled = true; };
+  }, [open, filePath]);
 
   useEffect(() => {
     if (!open) {

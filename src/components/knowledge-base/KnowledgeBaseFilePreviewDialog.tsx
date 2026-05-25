@@ -77,7 +77,7 @@ export function KnowledgeBaseFilePreviewDialog({
         const result = await mammoth.convertToHtml(
           { arrayBuffer: buffer },
           {
-            convertImage: mammoth.images.inline(async (image) => {
+            convertImage: mammoth.images.imgElement(async (image) => {
               const imgBuffer = await image.read('base64');
               return { src: `data:${image.contentType};base64,${imgBuffer}` };
             }),

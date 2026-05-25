@@ -202,7 +202,7 @@ export function AddRoomAccessModal({ open, onOpenChange, rooms, approvers, onSuc
                   <Calendar mode="single" selected={startDate} onSelect={setStartDate} className="p-3 pointer-events-auto" />
                 </PopoverContent>
               </Popover>
-              <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
+              
             </div>
 
             {/* End Date */}

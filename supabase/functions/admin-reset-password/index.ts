@@ -63,23 +63,15 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Parse request body
-    const { userId, newPassword } = await req.json()
-
-    if (!userId || !newPassword) {
+    // Parse and validate input
+    const parsed = resetSchema.safeParse(await req.json().catch(() => ({})))
+    if (!parsed.success) {
       return new Response(
-        JSON.stringify({ error: 'userId and newPassword are required' }),
+        JSON.stringify({ error: 'Invalid input' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
-
-    // Validate password length
-    if (newPassword.length < 6) {
-      return new Response(
-        JSON.stringify({ error: 'Password must be at least 6 characters' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+    const { userId, newPassword } = parsed.data
 
     // Update the user's password using admin API
     const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(

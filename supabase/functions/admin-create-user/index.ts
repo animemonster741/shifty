@@ -58,14 +58,14 @@ Deno.serve(async (req) => {
       )
     }
 
-    const { employeeId, fullName, password, role } = await req.json()
-
-    if (!employeeId || !fullName || !password) {
+    const parsed = createUserSchema.safeParse(await req.json().catch(() => ({})))
+    if (!parsed.success) {
       return new Response(
-        JSON.stringify({ error: 'Employee ID, full name, and password are required' }),
+        JSON.stringify({ error: 'Invalid input' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+    const { employeeId, fullName, password, role } = parsed.data
 
     // Check if employee ID already exists
     const { data: existingProfile } = await supabaseAdmin

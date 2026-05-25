@@ -64,23 +64,15 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Parse request body
-    const { teamId, newName, oldName } = await req.json()
-
-    if (!teamId || !newName) {
+    // Parse and validate input
+    const parsed = updateTeamSchema.safeParse(await req.json().catch(() => ({})))
+    if (!parsed.success) {
       return new Response(
-        JSON.stringify({ error: 'teamId and newName are required' }),
+        JSON.stringify({ error: 'Invalid input' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
-
-    // Validate team name
-    if (newName.trim().length < 2) {
-      return new Response(
-        JSON.stringify({ error: 'Team name must be at least 2 characters' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+    const { teamId, newName, oldName } = parsed.data
 
     // Check for duplicate team name
     const { data: existingTeam } = await supabaseAdmin

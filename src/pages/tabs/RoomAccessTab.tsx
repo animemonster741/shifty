@@ -210,10 +210,10 @@ export function RoomAccessTab() {
                     </TableCell>
                     <TableCell className="text-sm">{entry.reason}</TableCell>
                     <TableCell className="text-sm whitespace-nowrap">
-                      {format(new Date(entry.start_date), 'dd/MM/yyyy HH:mm')}
+                     {format(new Date(entry.start_date), 'dd/MM/yyyy')}
                     </TableCell>
                     <TableCell className="text-sm whitespace-nowrap">
-                      {format(new Date(entry.end_date), 'dd/MM/yyyy HH:mm')}
+                      {format(new Date(entry.end_date), 'dd/MM/yyyy')}
                     </TableCell>
                     <TableCell className="text-sm">
                       {entry.approver_id ? approverMap[entry.approver_id] || '-' : '-'}

@@ -1,4 +1,12 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { z } from 'https://esm.sh/zod@3.23.8'
+
+const createUserSchema = z.object({
+  employeeId: z.string().trim().min(1).max(64).regex(/^[A-Za-z0-9_\-.]+$/),
+  fullName: z.string().trim().min(1).max(100),
+  password: z.string().min(6).max(200),
+  role: z.enum(['admin', 'user']).optional(),
+})
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

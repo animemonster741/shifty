@@ -97,9 +97,8 @@ Deno.serve(async (req) => {
     })
 
     if (createError) {
-      console.error('Create user error:', createError)
       return new Response(
-        JSON.stringify({ error: createError.message }),
+        JSON.stringify({ error: 'Failed to create user' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -111,8 +110,6 @@ Deno.serve(async (req) => {
         .update({ role: 'admin' })
         .eq('user_id', newUser.user.id)
     }
-
-    console.log('User created successfully:', newUser.user?.id)
 
     return new Response(
       JSON.stringify({ 

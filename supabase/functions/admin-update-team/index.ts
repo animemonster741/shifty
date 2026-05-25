@@ -96,9 +96,8 @@ Deno.serve(async (req) => {
       .eq('id', teamId)
 
     if (updateError) {
-      console.error('Error updating team:', updateError)
       return new Response(
-        JSON.stringify({ error: updateError.message }),
+        JSON.stringify({ error: 'Failed to update team' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }

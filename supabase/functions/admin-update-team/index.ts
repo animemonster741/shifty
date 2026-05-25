@@ -1,9 +1,16 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { z } from 'https://esm.sh/zod@3.23.8'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
+
+const updateTeamSchema = z.object({
+  teamId: z.string().uuid(),
+  newName: z.string().trim().min(2).max(100),
+  oldName: z.string().max(100).optional(),
+})
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -57,23 +64,15 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Parse request body
-    const { teamId, newName, oldName } = await req.json()
-
-    if (!teamId || !newName) {
+    // Parse and validate input
+    const parsed = updateTeamSchema.safeParse(await req.json().catch(() => ({})))
+    if (!parsed.success) {
       return new Response(
-        JSON.stringify({ error: 'teamId and newName are required' }),
+        JSON.stringify({ error: 'Invalid input' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
-
-    // Validate team name
-    if (newName.trim().length < 2) {
-      return new Response(
-        JSON.stringify({ error: 'Team name must be at least 2 characters' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+    const { teamId, newName, oldName } = parsed.data
 
     // Check for duplicate team name
     const { data: existingTeam } = await supabaseAdmin
@@ -97,9 +96,8 @@ Deno.serve(async (req) => {
       .eq('id', teamId)
 
     if (updateError) {
-      console.error('Error updating team:', updateError)
       return new Response(
-        JSON.stringify({ error: updateError.message }),
+        JSON.stringify({ error: 'Failed to update team' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -120,8 +118,7 @@ Deno.serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
-  } catch (error) {
-    console.error('Unexpected error:', error)
+  } catch (_error) {
     return new Response(
       JSON.stringify({ error: 'An unexpected error occurred' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

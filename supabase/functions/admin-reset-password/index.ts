@@ -1,9 +1,15 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { z } from 'https://esm.sh/zod@3.23.8'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
+
+const resetSchema = z.object({
+  userId: z.string().uuid(),
+  newPassword: z.string().min(6).max(200),
+})
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -57,23 +63,15 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Parse request body
-    const { userId, newPassword } = await req.json()
-
-    if (!userId || !newPassword) {
+    // Parse and validate input
+    const parsed = resetSchema.safeParse(await req.json().catch(() => ({})))
+    if (!parsed.success) {
       return new Response(
-        JSON.stringify({ error: 'userId and newPassword are required' }),
+        JSON.stringify({ error: 'Invalid input' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
-
-    // Validate password length
-    if (newPassword.length < 6) {
-      return new Response(
-        JSON.stringify({ error: 'Password must be at least 6 characters' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+    const { userId, newPassword } = parsed.data
 
     // Update the user's password using admin API
     const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
@@ -82,9 +80,8 @@ Deno.serve(async (req) => {
     )
 
     if (updateError) {
-      console.error('Error updating password:', updateError)
       return new Response(
-        JSON.stringify({ error: updateError.message }),
+        JSON.stringify({ error: 'Failed to update password' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -105,8 +102,7 @@ Deno.serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
-  } catch (error) {
-    console.error('Unexpected error:', error)
+  } catch (_error) {
     return new Response(
       JSON.stringify({ error: 'An unexpected error occurred' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

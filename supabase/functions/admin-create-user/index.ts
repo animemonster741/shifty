@@ -1,4 +1,12 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { z } from 'https://esm.sh/zod@3.23.8'
+
+const createUserSchema = z.object({
+  employeeId: z.string().trim().min(1).max(64).regex(/^[A-Za-z0-9_\-.]+$/),
+  fullName: z.string().trim().min(1).max(100),
+  password: z.string().min(6).max(200),
+  role: z.enum(['admin', 'user']).optional(),
+})
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -50,14 +58,14 @@ Deno.serve(async (req) => {
       )
     }
 
-    const { employeeId, fullName, password, role } = await req.json()
-
-    if (!employeeId || !fullName || !password) {
+    const parsed = createUserSchema.safeParse(await req.json().catch(() => ({})))
+    if (!parsed.success) {
       return new Response(
-        JSON.stringify({ error: 'Employee ID, full name, and password are required' }),
+        JSON.stringify({ error: 'Invalid input' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+    const { employeeId, fullName, password, role } = parsed.data
 
     // Check if employee ID already exists
     const { data: existingProfile } = await supabaseAdmin
@@ -89,9 +97,8 @@ Deno.serve(async (req) => {
     })
 
     if (createError) {
-      console.error('Create user error:', createError)
       return new Response(
-        JSON.stringify({ error: createError.message }),
+        JSON.stringify({ error: 'Failed to create user' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -103,8 +110,6 @@ Deno.serve(async (req) => {
         .update({ role: 'admin' })
         .eq('user_id', newUser.user.id)
     }
-
-    console.log('User created successfully:', newUser.user?.id)
 
     return new Response(
       JSON.stringify({ 
@@ -118,8 +123,7 @@ Deno.serve(async (req) => {
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
-  } catch (error) {
-    console.error('Admin create user error:', error)
+  } catch (_error) {
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

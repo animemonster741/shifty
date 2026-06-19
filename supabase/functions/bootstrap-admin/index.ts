@@ -15,16 +15,31 @@ Deno.serve(async (req) => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
     const email = `${employeeId}@internal.noc.local`
-    const { data, error } = await admin.auth.admin.createUser({
-      email, password, email_confirm: true,
-      user_metadata: { employee_id: employeeId, full_name: fullName, role: 'admin' },
-    })
-    if (error) return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
-    if (data.user) {
-      await admin.from('user_roles').update({ role: 'admin' }).eq('user_id', data.user.id)
+
+    // Check existing profile
+    const { data: existing } = await admin.from('profiles').select('id').eq('employee_id', employeeId).maybeSingle()
+
+    let userId = existing?.id
+    if (userId) {
+      const { error: updErr } = await admin.auth.admin.updateUserById(userId, { password, email_confirm: true })
+      if (updErr) return new Response(JSON.stringify({ error: 'update: ' + updErr.message }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      await admin.from('profiles').update({ full_name: fullName }).eq('id', userId)
+    } else {
+      const { data, error } = await admin.auth.admin.createUser({
+        email, password, email_confirm: true,
+        user_metadata: { employee_id: employeeId, full_name: fullName, role: 'admin' },
+      })
+      if (error) return new Response(JSON.stringify({ error: 'create: ' + error.message }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      userId = data.user?.id
     }
-    return new Response(JSON.stringify({ success: true, id: data.user?.id }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+
+    if (userId) {
+      await admin.from('user_roles').upsert({ user_id: userId, role: 'admin' }, { onConflict: 'user_id,role' })
+      await admin.from('user_roles').update({ role: 'admin' }).eq('user_id', userId)
+    }
+
+    return new Response(JSON.stringify({ success: true, id: userId }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
   } catch (e: any) {
-    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    return new Response(JSON.stringify({ error: String(e?.message ?? e) }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
   }
 })

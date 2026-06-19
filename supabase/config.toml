@@ -6,6 +6,3 @@ verify_jwt = false
 [functions.admin-create-user]
 verify_jwt = true
 
-[functions.bootstrap-admin]
-verify_jwt = false
-

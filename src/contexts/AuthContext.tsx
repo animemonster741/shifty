@@ -108,15 +108,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: { employeeId, password, action: 'login' },
       });
 
-      if (fnError) {
-        console.error('Edge function error:', fnError);
-        return { error: 'Error looking up employee ID. Please try again.' };
+      // The edge function returns 401 with {error: "Invalid credentials"} for bad logins.
+      // supabase.functions.invoke surfaces non-2xx as fnError, but data still contains the JSON body.
+      if (data?.error) {
+        return { error: data.error === 'Invalid credentials'
+          ? 'Invalid Employee ID or password.'
+          : data.error };
       }
 
-      if (data?.error) {
-        return { error: data.error === 'Employee ID not found' 
-          ? 'Employee ID not found. Please contact your administrator.' 
-          : data.error };
+      if (fnError) {
+        console.error('Edge function error:', fnError);
+        return { error: 'Login failed. Please try again.' };
       }
 
       if (!data?.email) {

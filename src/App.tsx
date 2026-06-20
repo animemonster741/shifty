@@ -36,6 +36,7 @@ const App = () => (
                     <Route path="/settings" element={<SettingsPage />} />
                     <Route path="/access-control" element={<AccessControlPage />} />
                     <Route path="/tokens" element={<TokensPage />} />
+                    <Route path="/faults" element={<FaultsPage />} />
                     {import.meta.env.DEV && (
                       <Route path="/dev/create-user" element={<DevCreateUserPage />} />
                     )}

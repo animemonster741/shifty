@@ -452,6 +452,66 @@ export type Database = {
         }
         Relationships: []
       }
+      system_faults: {
+        Row: {
+          controller_location: string
+          controller_name: string
+          created_at: string
+          created_by: string | null
+          fault_description: string
+          fault_time: string
+          fault_type: string
+          id: string
+          modified_by: string | null
+          modified_time: string | null
+          network: string
+          notes: string | null
+          operator_id: string | null
+          operator_name: string
+          status: string
+          updated_at: string
+          vendor: string
+        }
+        Insert: {
+          controller_location: string
+          controller_name: string
+          created_at?: string
+          created_by?: string | null
+          fault_description: string
+          fault_time?: string
+          fault_type: string
+          id?: string
+          modified_by?: string | null
+          modified_time?: string | null
+          network: string
+          notes?: string | null
+          operator_id?: string | null
+          operator_name: string
+          status?: string
+          updated_at?: string
+          vendor: string
+        }
+        Update: {
+          controller_location?: string
+          controller_name?: string
+          created_at?: string
+          created_by?: string | null
+          fault_description?: string
+          fault_time?: string
+          fault_type?: string
+          id?: string
+          modified_by?: string | null
+          modified_time?: string | null
+          network?: string
+          notes?: string | null
+          operator_id?: string | null
+          operator_name?: string
+          status?: string
+          updated_at?: string
+          vendor?: string
+        }
+        Relationships: []
+      }
       teams: {
         Row: {
           created_at: string

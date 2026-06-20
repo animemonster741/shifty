@@ -11,7 +11,6 @@ import { KnowledgeBaseTab } from '@/pages/tabs/KnowledgeBaseTab';
 import { RoomAccessTab } from '@/pages/tabs/RoomAccessTab';
 import { CustomPageTab } from '@/pages/tabs/CustomPageTab';
 import { TokensTab } from '@/pages/tabs/TokensTab';
-import { FaultsTab } from '@/pages/tabs/FaultsTab';
 import { TabNotification, AlertChangeLog, IgnoredAlert } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNavigation } from '@/contexts/NavigationContext';
@@ -195,8 +194,6 @@ export function Dashboard() {
         return <RoomAccessTab />;
       case 'tokens':
         return <TokensTab />;
-      case 'faults':
-        return <FaultsTab />;
       case 'statistics':
         return <StatisticsTab />;
       case 'archive':

@@ -14,6 +14,7 @@ import { AdminPage } from "./pages/Admin";
 import { SettingsPage } from "./pages/Settings";
 import { AccessControlPage } from "./pages/AccessControlPage";
 import { TokensPage } from "./pages/TokensPage";
+import { FaultsPage } from "./pages/FaultsPage";
 import { DevCreateUserPage } from "./pages/DevCreateUser";
 
 const queryClient = new QueryClient();

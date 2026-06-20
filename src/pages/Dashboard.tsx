@@ -194,8 +194,6 @@ export function Dashboard() {
         return <RoomAccessTab />;
       case 'tokens':
         return <TokensTab />;
-      case 'faults':
-        return <FaultsTab />;
       case 'statistics':
         return <StatisticsTab />;
       case 'archive':

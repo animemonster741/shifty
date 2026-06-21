@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
-import { Loader2, Plus, Pencil, Trash2, Wrench, X } from 'lucide-react';
+import { Archive, ArchiveRestore, Loader2, Plus, Pencil, Trash2, Wrench, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';

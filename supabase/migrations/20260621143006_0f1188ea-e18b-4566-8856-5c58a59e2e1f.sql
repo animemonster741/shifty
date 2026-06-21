@@ -1,0 +1,1 @@
+DELETE FROM public.navigation_tabs WHERE tab_key = 'tokens';

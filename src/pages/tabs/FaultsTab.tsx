@@ -121,6 +121,7 @@ export function FaultsTab() {
   const [form, setForm] = useState<FormState>(emptyForm());
   const [submitting, setSubmitting] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [view, setView] = useState<'active' | 'archive'>('active');
 
   const fetchAll = async () => {
     setLoading(true);

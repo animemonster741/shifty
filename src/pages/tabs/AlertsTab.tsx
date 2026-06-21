@@ -9,6 +9,8 @@ import { AddAlertModal } from '@/components/alerts/AddAlertModal';
 import { AlertDetailModal } from '@/components/alerts/AlertDetailModal';
 import { EditAlertModal } from '@/components/alerts/EditAlertModal';
 import { FilterPanel } from '@/components/alerts/FilterPanel';
+import { ArchiveTab } from '@/pages/tabs/ArchiveTab';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
@@ -276,6 +278,12 @@ export function AlertsTab({ alerts, secondaryAlerts, onAlertsChange, onSecondary
 
   return (
     <div className="space-y-6 animate-fade-in" dir={direction}>
+      <Tabs defaultValue="active" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="active">{t('alerts.activeAlerts')}</TabsTrigger>
+          <TabsTrigger value="archive">{t('tabs.archive')}</TabsTrigger>
+        </TabsList>
+        <TabsContent value="active" className="space-y-6">
       {/* Stats overview */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="stat-card">
@@ -508,6 +516,11 @@ export function AlertsTab({ alerts, secondaryAlerts, onAlertsChange, onSecondary
         onOpenChange={setIsEditModalOpen}
         onSubmit={handleUpdateAlert}
       />
+        </TabsContent>
+        <TabsContent value="archive">
+          <ArchiveTab alerts={[...alerts, ...secondaryAlerts]} onAlertsChange={onAlertsChange} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

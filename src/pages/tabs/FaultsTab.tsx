@@ -248,6 +248,31 @@ export function FaultsTab() {
     setDeleteId(null);
   };
 
+  const handleArchive = async (f: SystemFault) => {
+    if (!user) return;
+    const archiving = !f.is_archived;
+    const { error } = await (supabase as any)
+      .from('system_faults')
+      .update({
+        is_archived: archiving,
+        archived_at: archiving ? new Date().toISOString() : null,
+        archived_by: archiving ? user.id : null,
+      })
+      .eq('id', f.id);
+    if (error) toast.error(error.message);
+    else {
+      toast.success(archiving
+        ? tt(language, 'הועבר לארכיון', 'Moved to archive')
+        : tt(language, 'שוחזר מהארכיון', 'Restored from archive'));
+      fetchAll();
+    }
+  };
+
+  const visibleFaults = useMemo(
+    () => faults.filter(f => (view === 'archive' ? f.is_archived : !f.is_archived)),
+    [faults, view]
+  );
+
   const locLabel = (v: string) => {
     const l = LOCATIONS.find(x => x.value === v);
     return l ? tt(language, l.he, l.en) : v;

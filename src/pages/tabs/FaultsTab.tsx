@@ -44,6 +44,9 @@ interface SystemFault {
   modified_by: string | null;
   modified_time: string | null;
   created_at: string;
+  is_archived: boolean;
+  archived_at: string | null;
+  archived_by: string | null;
 }
 
 interface Profile {

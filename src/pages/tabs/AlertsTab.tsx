@@ -9,6 +9,8 @@ import { AddAlertModal } from '@/components/alerts/AddAlertModal';
 import { AlertDetailModal } from '@/components/alerts/AlertDetailModal';
 import { EditAlertModal } from '@/components/alerts/EditAlertModal';
 import { FilterPanel } from '@/components/alerts/FilterPanel';
+import { ArchiveTab } from '@/pages/tabs/ArchiveTab';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';

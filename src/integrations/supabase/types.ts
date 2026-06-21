@@ -454,6 +454,8 @@ export type Database = {
       }
       system_faults: {
         Row: {
+          archived_at: string | null
+          archived_by: string | null
           controller_location: string
           controller_name: string
           created_at: string
@@ -462,6 +464,7 @@ export type Database = {
           fault_time: string
           fault_type: string
           id: string
+          is_archived: boolean
           modified_by: string | null
           modified_time: string | null
           network: string
@@ -473,6 +476,8 @@ export type Database = {
           vendor: string
         }
         Insert: {
+          archived_at?: string | null
+          archived_by?: string | null
           controller_location: string
           controller_name: string
           created_at?: string
@@ -481,6 +486,7 @@ export type Database = {
           fault_time?: string
           fault_type: string
           id?: string
+          is_archived?: boolean
           modified_by?: string | null
           modified_time?: string | null
           network: string
@@ -492,6 +498,8 @@ export type Database = {
           vendor: string
         }
         Update: {
+          archived_at?: string | null
+          archived_by?: string | null
           controller_location?: string
           controller_name?: string
           created_at?: string
@@ -500,6 +508,7 @@ export type Database = {
           fault_time?: string
           fault_type?: string
           id?: string
+          is_archived?: boolean
           modified_by?: string | null
           modified_time?: string | null
           network?: string

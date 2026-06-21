@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
-import { Loader2, Plus, Pencil, Trash2, Wrench, X } from 'lucide-react';
+import { Archive, ArchiveRestore, Loader2, Plus, Pencil, Trash2, Wrench, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,6 +22,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 type FaultType = 'hardware' | 'software';
 type FaultStatus = 'open_external' | 'closed' | 'frozen';
@@ -43,6 +44,9 @@ interface SystemFault {
   modified_by: string | null;
   modified_time: string | null;
   created_at: string;
+  is_archived: boolean;
+  archived_at: string | null;
+  archived_by: string | null;
 }
 
 interface Profile {
@@ -117,6 +121,7 @@ export function FaultsTab() {
   const [form, setForm] = useState<FormState>(emptyForm());
   const [submitting, setSubmitting] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [view, setView] = useState<'active' | 'archive'>('active');
 
   const fetchAll = async () => {
     setLoading(true);
@@ -242,6 +247,31 @@ export function FaultsTab() {
     }
     setDeleteId(null);
   };
+
+  const handleArchive = async (f: SystemFault) => {
+    if (!user) return;
+    const archiving = !f.is_archived;
+    const { error } = await (supabase as any)
+      .from('system_faults')
+      .update({
+        is_archived: archiving,
+        archived_at: archiving ? new Date().toISOString() : null,
+        archived_by: archiving ? user.id : null,
+      })
+      .eq('id', f.id);
+    if (error) toast.error(error.message);
+    else {
+      toast.success(archiving
+        ? tt(language, 'הועבר לארכיון', 'Moved to archive')
+        : tt(language, 'שוחזר מהארכיון', 'Restored from archive'));
+      fetchAll();
+    }
+  };
+
+  const visibleFaults = useMemo(
+    () => faults.filter(f => (view === 'archive' ? f.is_archived : !f.is_archived)),
+    [faults, view]
+  );
 
   const locLabel = (v: string) => {
     const l = LOCATIONS.find(x => x.value === v);
@@ -428,19 +458,30 @@ export function FaultsTab() {
       )}
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle className="text-lg">
-            {tt(language, 'תקלות מתועדות', 'Logged Faults')} ({faults.length})
+            {view === 'archive'
+              ? tt(language, 'ארכיון תקלות', 'Faults Archive')
+              : tt(language, 'תקלות מתועדות', 'Logged Faults')}{' '}
+            ({visibleFaults.length})
           </CardTitle>
+          <Tabs value={view} onValueChange={(v) => setView(v as 'active' | 'archive')}>
+            <TabsList>
+              <TabsTrigger value="active">{tt(language, 'פעילות', 'Active')}</TabsTrigger>
+              <TabsTrigger value="archive">{tt(language, 'ארכיון', 'Archive')}</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </CardHeader>
         <CardContent className="p-0">
           {loading ? (
             <div className="flex justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
-          ) : faults.length === 0 ? (
+          ) : visibleFaults.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
-              {tt(language, 'אין תקלות מתועדות', 'No faults logged yet')}
+              {view === 'archive'
+                ? tt(language, 'הארכיון ריק', 'Archive is empty')
+                : tt(language, 'אין תקלות מתועדות', 'No faults logged yet')}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -459,7 +500,7 @@ export function FaultsTab() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {faults.map(f => (
+                  {visibleFaults.map(f => (
                     <TableRow key={f.id}>
                       <TableCell className="whitespace-nowrap text-sm">
                         {format(new Date(f.fault_time), 'yyyy-MM-dd HH:mm')}
@@ -479,6 +520,18 @@ export function FaultsTab() {
                         <div className="flex justify-end gap-1">
                           <Button size="icon" variant="ghost" onClick={() => openEdit(f)} title={tt(language, 'עריכה', 'Edit')}>
                             <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => handleArchive(f)}
+                            title={f.is_archived
+                              ? tt(language, 'שחזור מארכיון', 'Restore from archive')
+                              : tt(language, 'העברה לארכיון', 'Move to archive')}
+                          >
+                            {f.is_archived
+                              ? <ArchiveRestore className="h-4 w-4" />
+                              : <Archive className="h-4 w-4" />}
                           </Button>
                           {isAdmin && (
                             <Button size="icon" variant="ghost" onClick={() => setDeleteId(f.id)} title={tt(language, 'מחיקה', 'Delete')}>

@@ -190,8 +190,6 @@ export function Dashboard() {
         return <LinksTab />;
       case 'knowledge-base':
         return <KnowledgeBaseTab />;
-      case 'knowledge-base':
-        return <KnowledgeBaseTab />;
       case 'room-access':
         return <RoomAccessTab />;
       case 'statistics':

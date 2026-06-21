@@ -278,6 +278,12 @@ export function AlertsTab({ alerts, secondaryAlerts, onAlertsChange, onSecondary
 
   return (
     <div className="space-y-6 animate-fade-in" dir={direction}>
+      <Tabs defaultValue="active" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="active">{t('alerts.activeAlerts')}</TabsTrigger>
+          <TabsTrigger value="archive">{t('tabs.archive')}</TabsTrigger>
+        </TabsList>
+        <TabsContent value="active" className="space-y-6">
       {/* Stats overview */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="stat-card">

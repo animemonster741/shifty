@@ -516,6 +516,11 @@ export function AlertsTab({ alerts, secondaryAlerts, onAlertsChange, onSecondary
         onOpenChange={setIsEditModalOpen}
         onSubmit={handleUpdateAlert}
       />
+        </TabsContent>
+        <TabsContent value="archive">
+          <ArchiveTab alerts={[...alerts, ...secondaryAlerts]} onAlertsChange={onAlertsChange} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

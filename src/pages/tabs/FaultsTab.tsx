@@ -458,19 +458,30 @@ export function FaultsTab() {
       )}
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle className="text-lg">
-            {tt(language, 'תקלות מתועדות', 'Logged Faults')} ({faults.length})
+            {view === 'archive'
+              ? tt(language, 'ארכיון תקלות', 'Faults Archive')
+              : tt(language, 'תקלות מתועדות', 'Logged Faults')}{' '}
+            ({visibleFaults.length})
           </CardTitle>
+          <Tabs value={view} onValueChange={(v) => setView(v as 'active' | 'archive')}>
+            <TabsList>
+              <TabsTrigger value="active">{tt(language, 'פעילות', 'Active')}</TabsTrigger>
+              <TabsTrigger value="archive">{tt(language, 'ארכיון', 'Archive')}</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </CardHeader>
         <CardContent className="p-0">
           {loading ? (
             <div className="flex justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
-          ) : faults.length === 0 ? (
+          ) : visibleFaults.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
-              {tt(language, 'אין תקלות מתועדות', 'No faults logged yet')}
+              {view === 'archive'
+                ? tt(language, 'הארכיון ריק', 'Archive is empty')
+                : tt(language, 'אין תקלות מתועדות', 'No faults logged yet')}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -489,7 +500,7 @@ export function FaultsTab() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {faults.map(f => (
+                  {visibleFaults.map(f => (
                     <TableRow key={f.id}>
                       <TableCell className="whitespace-nowrap text-sm">
                         {format(new Date(f.fault_time), 'yyyy-MM-dd HH:mm')}
@@ -509,6 +520,18 @@ export function FaultsTab() {
                         <div className="flex justify-end gap-1">
                           <Button size="icon" variant="ghost" onClick={() => openEdit(f)} title={tt(language, 'עריכה', 'Edit')}>
                             <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => handleArchive(f)}
+                            title={f.is_archived
+                              ? tt(language, 'שחזור מארכיון', 'Restore from archive')
+                              : tt(language, 'העברה לארכיון', 'Move to archive')}
+                          >
+                            {f.is_archived
+                              ? <ArchiveRestore className="h-4 w-4" />
+                              : <Archive className="h-4 w-4" />}
                           </Button>
                           {isAdmin && (
                             <Button size="icon" variant="ghost" onClick={() => setDeleteId(f.id)} title={tt(language, 'מחיקה', 'Delete')}>

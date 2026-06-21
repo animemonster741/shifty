@@ -10,7 +10,7 @@ import { LinksTab } from '@/pages/tabs/LinksTab';
 import { KnowledgeBaseTab } from '@/pages/tabs/KnowledgeBaseTab';
 import { RoomAccessTab } from '@/pages/tabs/RoomAccessTab';
 import { CustomPageTab } from '@/pages/tabs/CustomPageTab';
-import { TokensTab } from '@/pages/tabs/TokensTab';
+
 import { TabNotification, AlertChangeLog, IgnoredAlert } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNavigation } from '@/contexts/NavigationContext';

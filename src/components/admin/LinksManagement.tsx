@@ -31,6 +31,7 @@ const INTERNAL_ROUTES = [
   { value: '/access-control', label_he: 'ניהול כניסה', label_en: 'Access Management' },
   { value: '/tokens', label_he: 'ניהול טוקנים', label_en: 'Token Management' },
   { value: '/knowledge-base', label_he: 'בסיס ידע', label_en: 'Knowledge Base' },
+  { value: '/faults', label_he: 'תקלות מערכת', label_en: 'System Faults' },
 ];
 
 const linkSchema = z.object({

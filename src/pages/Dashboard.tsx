@@ -24,6 +24,9 @@ export function Dashboard() {
   const { direction } = useLanguage();
   const { tabs, isLoading, getVisibleTabs } = useNavigation();
   const { isAdmin, isAccessOnly } = useAuth();
+  const { globalSearchQuery } = useGlobalSearch();
+  const hasGlobalSearch = globalSearchQuery.trim().length > 0;
+
   
   // Memoize visible tabs to prevent unnecessary re-renders
   const visibleTabs = useMemo(() => getVisibleTabs(isAdmin, isAccessOnly), [tabs, isAdmin, isAccessOnly, getVisibleTabs]);

@@ -194,13 +194,38 @@ export function AlertsTab({ alerts, secondaryAlerts, onAlertsChange, onSecondary
     setIsEditModalOpen(true);
   };
 
-  const handleUpdateAlert = (updatedAlert: IgnoredAlert, changeLogs: AlertChangeLog[]) => {
+  const handleUpdateAlert = async (updatedAlert: IgnoredAlert, changeLogs: AlertChangeLog[]) => {
+    // Optimistic local update
     if (activeTableSource === 'primary') {
       onAlertsChange(alerts.map(a => a.id === updatedAlert.id ? updatedAlert : a));
     } else {
       onSecondaryAlertsChange(secondaryAlerts.map(a => a.id === updatedAlert.id ? updatedAlert : a));
     }
+
+    try {
+      const { error } = await (supabase as any)
+        .from('ignored_alerts')
+        .update({
+          instruction_given_by: updatedAlert.instructionGivenBy,
+          team: updatedAlert.team,
+          system: updatedAlert.system,
+          device_name: updatedAlert.deviceName,
+          summary: updatedAlert.summary,
+          notes: updatedAlert.notes ?? null,
+          full_alert_paste: updatedAlert.fullAlertPaste ?? null,
+          ignore_until: updatedAlert.ignoreUntil.toISOString(),
+          modified_by: updatedAlert.modifiedBy ?? null,
+          modified_by_name: updatedAlert.modifiedByName ?? null,
+          modified_time: (updatedAlert.modifiedTime ?? new Date()).toISOString(),
+        })
+        .eq('id', updatedAlert.id);
+      if (error) throw error;
+    } catch (e: any) {
+      console.error('Failed to save alert changes:', e);
+      toast.error(e?.message ?? 'Failed to save changes');
+    }
   };
+
 
   const handleDeleteAlert = (alertId: string, source: 'primary' | 'secondary') => {
     const alertsSource = source === 'primary' ? alerts : secondaryAlerts;

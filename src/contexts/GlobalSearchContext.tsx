@@ -39,15 +39,20 @@ export function GlobalSearchProvider({ children }: GlobalSearchProviderProps) {
       if (!globalSearchQuery.trim()) return alerts;
       
       const query = globalSearchQuery.toLowerCase();
-      return alerts.filter(alert => 
-        alert.instructionGivenBy.toLowerCase().includes(query) ||
-        alert.system.toLowerCase().includes(query) ||
-        alert.deviceName.toLowerCase().includes(query) ||
-        alert.summary.toLowerCase().includes(query) ||
-        (alert.notes?.toLowerCase().includes(query) ?? false)
+      return alerts.filter(alert =>
+        (alert.instructionGivenBy?.toLowerCase().includes(query) ?? false) ||
+        (alert.system?.toLowerCase().includes(query) ?? false) ||
+        (alert.deviceName?.toLowerCase().includes(query) ?? false) ||
+        (alert.summary?.toLowerCase().includes(query) ?? false) ||
+        (alert.notes?.toLowerCase().includes(query) ?? false) ||
+        (alert.team?.toLowerCase().includes(query) ?? false) ||
+        (alert.addedByName?.toLowerCase().includes(query) ?? false) ||
+        (alert.fullAlertPaste?.toLowerCase().includes(query) ?? false) ||
+        (alert.archiveReason?.toLowerCase().includes(query) ?? false)
       );
     };
   }, [globalSearchQuery]);
+
 
   const filterMessages = useMemo(() => {
     return (messages: ImportantMessage[]): ImportantMessage[] => {

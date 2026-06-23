@@ -218,8 +218,9 @@ export function Dashboard() {
         notifications={notifications}
       />
       <main className="container px-4 py-6">
-        {renderTabContent()}
+        {hasGlobalSearch ? <GlobalSearchResults /> : renderTabContent()}
       </main>
+
     </div>
   );
 }

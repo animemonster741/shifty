@@ -10,12 +10,15 @@ import { LinksTab } from '@/pages/tabs/LinksTab';
 import { KnowledgeBaseTab } from '@/pages/tabs/KnowledgeBaseTab';
 import { RoomAccessTab } from '@/pages/tabs/RoomAccessTab';
 import { CustomPageTab } from '@/pages/tabs/CustomPageTab';
+import { GlobalSearchResults } from '@/components/search/GlobalSearchResults';
 
 import { TabNotification, AlertChangeLog, IgnoredAlert } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNavigation } from '@/contexts/NavigationContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useGlobalSearch } from '@/contexts/GlobalSearchContext';
 import { supabase } from '@/integrations/supabase/client';
+
 
 export function Dashboard() {
   const { direction } = useLanguage();
